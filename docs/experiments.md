@@ -1,6 +1,6 @@
 # Experiment log
 
-> **Commit IDs in this log** (e.g. code `7d93e26`, freeze `86f7381`) refer to the development history, which is kept as the tag `v2-dev-history` in the original working copy. The public GitHub repo received a snapshot of the same files (see `docs/GITHUB_SYNC_PLAN.md`). Kaggle run outputs record the same IDs in `code_version`.
+> **Commit IDs in this log** (e.g. code `7d93e26`, freeze `86f7381`) refer to the development history, which is kept as the tag `v2-dev-history` in the original working copy. The public GitHub repo received a snapshot of the same files (see `archive/docs/GITHUB_SYNC_PLAN.md`). Kaggle run outputs record the same IDs in `code_version`.
 
 **In short:** every model run is recorded here: which data and code version it used, its settings, and its scores. The results table at the bottom is regenerated automatically from the Kaggle outputs (`python src/evaluation/report.py`). Models are picked using cross-validation on the training pool. The held-out **test** set is scored only once, at the end.
 

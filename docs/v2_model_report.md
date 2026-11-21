@@ -85,7 +85,7 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 
 ## 4. What changed in the repository
 
-**Team files not modified:** `src/retinograde_inference.py`, `src/training/stage1_binary_train.py`, `src/training/stage2_severity_cascade.py`, `src/training/eyepacs_pretrain_stage2.py`, `src/preprocessing/eyepacs_prepare.py`.
+**Team files not modified** by the v2 work: `src/retinograde_inference.py` and the v1 scripts `stage1_binary_train.py`, `stage2_severity_cascade.py`, `eyepacs_pretrain_stage2.py`, `eyepacs_prepare.py` (since 2026-11-22 these four are in `archive/v1/scripts/`, together with the v1 model file; the team notebooks are in `notebooks/exploration/`).
 
 **New or extended:**
 - `src/training/train.py` (generic trainer: candidates A/B/C, folds, seeds, 384px, mixed APTOS+EyePACS, full-pool mode) and `src/training/predict.py` (re-scoring, TTA).

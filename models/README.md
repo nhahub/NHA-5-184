@@ -1,4 +1,7 @@
-# Models (not generated here — copy the real files from the team's Kaggle outputs)
+# Models (no model files are stored in this repo except the archived v1 file in `archive/v1/model/`)
+
+**Current model: v2** (section at the end). Everything above it describes v1 and is kept for reference.
+
 Expected v1 artifacts (≈15 MB each):
 - `stage1_v1.keras`            — Stage 1 binary DR / no-DR (frozen copy of best_binary_dr_model.keras)
 - `best_severity_model.keras`  — Stage 2 (Grades 1–4), v1 candidate (power 1.0)
