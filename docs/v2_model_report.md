@@ -116,4 +116,4 @@ About 20 GPU-hours on Kaggle (free weekly quota) plus 41 minutes on Colab. Local
 3. Image-quality gate (EyeQ), confidence calibration, Streamlit app, API, MLflow, Azure deployment, documentation.
 
 ---
-*AI assistance: the experiment design, code in `src/evaluation`, `src/training/train.py`, `kaggle/` and this report were produced with Claude Code (Anthropic) under the team's direction and approval at each step. All results come from runs logged in `docs/experiments.md`.*
+*AI assistance: the experiment design, the code in `src/evaluation`, `src/training/train.py` and `kaggle/`, and this report were produced with the help of an AI coding assistant, under the team's direction and approval at each step. All results come from runs logged in `docs/experiments.md`.*

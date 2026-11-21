@@ -103,4 +103,4 @@ Note: `src/retinograde_inference.py` still loads the **v1** cascade. Switching i
 
 Omar Khaled Mohamed Nasr (team leader) · Omar Ashour Ragheb Abdelkarim · Eyad Tamer Amin Zayed Zayed · Omar Ibrahim Hussein Hussein Tibah · Ahmed Samy Soliman Atia · Yahia Salah Eldeen Fahmy.
 
-*Parts of the code, experiments and documentation were produced with AI assistance (Claude Code). See the note at the end of [`docs/v2_model_report.md`](docs/v2_model_report.md).*
+*Parts of the code, experiments and documentation were produced with the help of an AI coding assistant and reviewed by the team.*
