@@ -44,7 +44,7 @@ for d in BASE_DIRS:
     if os.path.isdir(d) and any(c in os.listdir(d) for c in GRADE_OF):
         base_dir = d
         break
-assert base_dir is not None, "مش لاقي فولدر EyePACS - راجعوا BASE_DIRS"
+assert base_dir is not None, "EyePACS folder not found - check BASE_DIRS"
 print("Base dir:", base_dir)
 
 rows = []
@@ -61,9 +61,9 @@ meta = pd.DataFrame(rows, columns=['path', 'grade', 'patient', 'stem'])
 if LIMIT:
     meta = meta.sample(LIMIT, random_state=SEED).reset_index(drop=True)
 
-print("عدد الصور:", len(meta), "| عدد المرضى:", meta['patient'].nunique())
-print("أمثلة أسماء:", meta['stem'].head(3).tolist())
-print("نسبة المرضى اللي أسماءهم أرقام (المفروض قريبة من 1.0):", round(float(meta['patient'].str.isdigit().mean()), 3))
+print("Images:", len(meta), "| patients:", meta['patient'].nunique())
+print("Example names:", meta['stem'].head(3).tolist())
+print("Share of numeric patient IDs (should be close to 1.0):", round(float(meta['patient'].str.isdigit().mean()), 3))
 print(meta['grade'].value_counts().sort_index())
 
 
@@ -81,8 +81,8 @@ meta['split'] = split
 # تأكيد: مفيش مريض في أكتر من split
 for a, b in [(0, 1), (0, 2), (1, 2)]:
     overlap = set(meta.patient[meta.split == a]) & set(meta.patient[meta.split == b])
-    assert not overlap, f"تسريب مرضى بين split {a} و {b}: {len(overlap)}"
-print("✅ مفيش تسريب مرضى بين الـ splits")
+    assert not overlap, f"Patient leakage between splits {a} and {b}: {len(overlap)}"
+print("✅ No patient leakage between splits")
 print(pd.crosstab(meta['split'].map({0: 'train', 1: 'val', 2: 'test'}), meta['grade']))
 
 
@@ -158,13 +158,13 @@ with mp.get_context('fork').Pool(N_WORKERS) as pool:
         X[i] = arr
         ok[i] = good
         if i % 2000 == 0:
-            print(f"تمت معالجة {i} / {len(meta)}")
+            print(f"Processed {i} / {len(meta)}")
 X.flush()
 meta['ok'] = ok
 
 meta.to_csv(os.path.join(OUT_DIR, 'meta.csv'), index=False)
-print(f"✅ خلصنا: {int(ok.sum())} صورة سليمة من {len(meta)} | فشلت: {int((~ok).sum())}")
-print("حجم X.npy:", round(os.path.getsize(os.path.join(OUT_DIR, 'X.npy')) / 1024**3, 2), "GB")
+print(f"✅ Done: {int(ok.sum())} valid images out of {len(meta)} | failed: {int((~ok).sum())}")
+print("X.npy size:", round(os.path.getsize(os.path.join(OUT_DIR, 'X.npy')) / 1024**3, 2), "GB")
 
 
 # ============================== Cell 6 ===============================
@@ -179,4 +179,4 @@ for ax, i in zip(axes.ravel(), ids):
 plt.tight_layout()
 plt.show()
 
-print("\nبعد كده: Save Version أو نزّلوا فولدر eyepacs_224 من Output وارفعوه كـ Dataset (اسم مقترح: eyepacs-224-uint8)")
+print("\nNext: Save Version, or download the eyepacs_224 folder from Output and upload it as a Dataset (suggested name: eyepacs-224-uint8)")

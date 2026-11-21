@@ -56,7 +56,7 @@ def find_dir_with(filename, roots=SEARCH_ROOTS):
     return None
 
 EYEPACS_DIR = find_dir_with("meta.csv")
-assert EYEPACS_DIR, "مش لاقي meta.csv: ضيفوا داتا eyepacs_224 كـ Input (Add Input)"
+assert EYEPACS_DIR, "meta.csv not found: add the eyepacs_224 data as an Input (Add Input)"
 print("EyePACS dir:", EYEPACS_DIR)
 
 X = np.load(os.path.join(EYEPACS_DIR, "X.npy"), mmap_mode="r")     # uint8 (0-255)
@@ -164,7 +164,7 @@ model.fit(
                EarlyStopping(monitor="val_qwk", mode="max", patience=3, restore_best_weights=True)],
     verbose=1,
 )
-print("أحسن QWK في المرحلة أ:", max(qwk_a.scores))
+print("Best QWK in phase A:", max(qwk_a.scores))
 
 
 # ============================== Cell 6 ===============================
@@ -173,7 +173,7 @@ base.trainable = True
 for layer in base.layers:
     if isinstance(layer, BatchNormalization):
         layer.trainable = False
-print("عدد الطبقات القابلة للتدريب:", sum(l.trainable for l in base.layers))
+print("Number of trainable layers:", sum(l.trainable for l in base.layers))
 
 model.compile(optimizer=tf.keras.optimizers.Adam(LR_B),
               loss="sparse_categorical_crossentropy", metrics=["accuracy"])
@@ -186,12 +186,12 @@ model.fit(
     verbose=1,
 )
 best_a, best_b = max(qwk_a.scores), max(qwk_b.scores)
-print(f"QWK مرحلة أ: {best_a:.4f} | QWK مرحلة ب: {best_b:.4f}")
+print(f"QWK phase A: {best_a:.4f} | QWK phase B: {best_b:.4f}")
 if best_a > best_b:
     shutil.copy(PATH_A, OUT_MODEL)
-    print("المرحلة أ كانت أحسن -> اتنسخت على OUT_MODEL")
-print("حجم الموديل:", round(os.path.getsize(OUT_MODEL) / 1024**2, 1), "MB")
-print("⚠️ نزّلوا", OUT_MODEL, "من Output وارفعوه كـ Dataset (اسم مقترح: eyepacs-stage2-pretrained)")
+    print("Phase A was better -> copied to OUT_MODEL")
+print("Model size:", round(os.path.getsize(OUT_MODEL) / 1024**2, 1), "MB")
+print("⚠️ Download", OUT_MODEL, "from Output and upload it as a Dataset (suggested name: eyepacs-stage2-pretrained)")
 
 
 # ============================== Cell 7 ===============================
@@ -222,6 +222,6 @@ if os.path.exists(aptos_x) and os.path.exists(aptos_y):
     ya = np.load(aptos_y).astype(np.int32)
     ia = np.where(ya > 0)[0]
     aptos_ds = make_dataset(Xa, ia, ya[ia] - 1, scale=255.0)
-    evaluate("APTOS val - Zero-shot (الموديل ماتدربش على APTOS)", aptos_ds, ya[ia] - 1)
+    evaluate("APTOS val - zero-shot (model not trained on APTOS)", aptos_ds, ya[ia] - 1)
 else:
-    print("داتا APTOS المعالجة مش موجودة في APTOS_DIR - اتخطينا التقييم Zero-shot")
+    print("Preprocessed APTOS data not found in APTOS_DIR - skipping the zero-shot evaluation")

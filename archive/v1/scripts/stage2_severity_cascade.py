@@ -149,7 +149,7 @@ def build_stage2(n_classes=4):
 if PRETRAINED_STAGE2:
     model = tf.keras.models.load_model(PRETRAINED_STAGE2)
     base = next(l for l in model.layers if isinstance(l, tf.keras.Model))   # الـ EfficientNet جوه الموديل
-    print("اتحمّل موديل EyePACS المتدرّب:", PRETRAINED_STAGE2)
+    print("Loaded the EyePACS-pretrained model:", PRETRAINED_STAGE2)
 else:
     model, base = build_stage2()
 model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
@@ -163,7 +163,7 @@ PATH_A = STAGE2_PATH.replace(".keras", "_phaseA.keras")
 qwk_a = QWKCallback(val_ds, y_va)
 
 if PRETRAINED_STAGE2:
-    print("موديل Pretrained: بنعدّي المرحلة أ ونروح للـ Fine-tuning (Cell 6) على طول")
+    print("Pretrained model: skipping phase A, going straight to fine-tuning (Cell 6)")
 else:
     history_a = model.fit(
         train_ds, validation_data=val_ds,
@@ -177,7 +177,7 @@ else:
         ],
         verbose=1,
     )
-    print("أحسن QWK في المرحلة أ:", max(qwk_a.scores))
+    print("Best QWK in phase A:", max(qwk_a.scores))
 
 
 # ============================== Cell 6 ===============================
@@ -188,7 +188,7 @@ for layer in base.layers[:-FINETUNE_LAYERS]:
 for layer in base.layers:
     if isinstance(layer, BatchNormalization):
         layer.trainable = False
-print("عدد الطبقات القابلة للتدريب:", sum(l.trainable for l in base.layers))
+print("Number of trainable layers:", sum(l.trainable for l in base.layers))
 
 model.compile(optimizer=tf.keras.optimizers.Adam(LR_B),   # لازم compile تاني بعد تغيير trainable
               loss="sparse_categorical_crossentropy", metrics=["accuracy"])
@@ -210,12 +210,12 @@ history_b = model.fit(
 # STAGE2_PATH يفضل دايماً فيه الأحسن بين المرحلتين
 best_a = max(qwk_a.scores) if qwk_a.scores else -1.0     # -1 = المرحلة أ اتعدّت (Pretrained)
 best_b = max(qwk_b.scores)
-print(f"QWK مرحلة أ: {best_a:.4f} | QWK مرحلة ب: {best_b:.4f}")
+print(f"QWK phase A: {best_a:.4f} | QWK phase B: {best_b:.4f}")
 if best_a > best_b:
     shutil.copy(PATH_A, STAGE2_PATH)
-    print("المرحلة أ كانت أحسن -> اتنسخت على STAGE2_PATH")
-print("حجم موديل Stage 2 المحفوظ:", round(os.path.getsize(STAGE2_PATH) / 1024**2, 1), "MB")
-print("⚠️ ملفات /kaggle/working بتضيع لما الـ Session تقفل: نزّلوا الملف من Output (يمين) وارفعوه كـ Dataset")
+    print("Phase A was better -> copied to STAGE2_PATH")
+print("Saved Stage 2 model size:", round(os.path.getsize(STAGE2_PATH) / 1024**2, 1), "MB")
+print("⚠️ Files in /kaggle/working are lost when the session ends: download the file from Output (right panel) and upload it as a Dataset")
 
 
 # ============================== Cell 7 ===============================
@@ -225,7 +225,7 @@ preds2 = stage2.predict(val_ds, verbose=0).argmax(axis=1)
 
 print(classification_report(y_va, preds2, labels=[0, 1, 2, 3],
                             target_names=CLASS_NAMES, zero_division=0))
-print("QWK (Stage 2 لوحده):", round(cohen_kappa_score(y_va, preds2, weights="quadratic"), 4))
+print("QWK (Stage 2 alone):", round(cohen_kappa_score(y_va, preds2, weights="quadratic"), 4))
 print("Accuracy:", round(float(np.mean(preds2 == y_va)), 4))
 print("Within-1-grade accuracy:", round(float(np.mean(np.abs(preds2 - y_va) <= 1)), 4))
 
@@ -257,7 +257,7 @@ def evaluate_cascade(stage1_path):
     p2 = stage2.predict(all_ds, verbose=0)                  # Stage 2 على كل الصور (بنستخدمه بس لو Stage 1 قال مريض)
     grade_if_dr = p2.argmax(axis=1) + 1                     # 1..4
 
-    print("threshold | QWK    | Acc   | DR recall | سليم اتصنّف مريض")
+    print("threshold | QWK    | Acc   | DR recall | healthy flagged as DR")
     for thr in [0.5, 0.4, 0.3, 0.2]:
         final = np.where(p1 >= thr, grade_if_dr, 0)
         qwk = cohen_kappa_score(y_val_full, final, weights="quadratic")
@@ -268,7 +268,7 @@ def evaluate_cascade(stage1_path):
 
     # إيه الـ Grades اللي Stage 1 فوّتها (عند threshold = 0.5)؟
     missed = (y_val_full > 0) & (p1 < 0.5)
-    print("\nحالات مصابة Stage 1 فوّتها [Grade1, Grade2, Grade3, Grade4]:",
+    print("\nDR cases missed by Stage 1 [Grade1, Grade2, Grade3, Grade4]:",
           np.bincount(y_val_full[missed], minlength=5)[1:])
 
     final = np.where(p1 >= 0.5, grade_if_dr, 0)
@@ -282,15 +282,15 @@ def evaluate_cascade(stage1_path):
 P1 = P2 = None
 STAGE1_PATH = find_model(STAGE1_FILENAMES)
 if STAGE1_PATH is None:
-    print(f"⚠️ مش لاقي أي ملف من {STAGE1_FILENAMES} في {SEARCH_ROOTS}")
-    print("ده طبيعي لو Stage 1 اتدرّب في Notebook تاني (كل Notebook ليه /kaggle/working لوحده).")
-    print("الحل: ارفعوا الملف كـ Dataset وضيفوه Input لـ Notebook ده (Add Input) وشغّلوا Cell 8 تاني.")
+    print(f"⚠️ None of {STAGE1_FILENAMES} was found in {SEARCH_ROOTS}")
+    print("This is expected if Stage 1 was trained in another notebook (each notebook has its own /kaggle/working).")
+    print("Fix: upload the file as a Dataset, add it as an Input to this notebook (Add Input) and run Cell 8 again.")
 else:
-    print("لقيت موديل Stage 1 في:", STAGE1_PATH)
+    print("Found the Stage 1 model at:", STAGE1_PATH)
     frozen = "/kaggle/working/stage1_v1.keras"
     if STAGE1_PATH.startswith("/kaggle/working") and not os.path.exists(frozen):
         shutil.copy(STAGE1_PATH, frozen)           # نسخة ثابتة: نزّلوها وارفعوها كـ Dataset ومتدربوهاش تاني
-        print("اتعملت نسخة ثابتة:", frozen)
+        print("Frozen copy created:", frozen)
     P1, P2 = evaluate_cascade(STAGE1_PATH)
 
 
@@ -331,13 +331,13 @@ def prior_sweep():
 def show_missed_cases(min_grade=2):
     """الحالات (Grade 2+) اللي Stage 1 فوّتها عند THR: لو p1 قريبة من THR يبقى threshold أقل كان هيمسكها"""
     missed = np.where((y_val_full >= min_grade) & (P1 < THR))[0]
-    print(f"\nحالات Grade {min_grade}+ اللي Stage 1 فوّتها عند THR={THR}: {len(missed)}")
+    print(f"\nGrade {min_grade}+ cases missed by Stage 1 at THR={THR}: {len(missed)}")
     for i in missed:
         print(f"   index={i}  grade={y_val_full[i]}  p1={P1[i]:.3f}")
 
 
 if P1 is None:
-    print("شغّلوا Cell 8 الأول (محتاجين P1 و P2)")
+    print("Run Cell 8 first (P1 and P2 are needed)")
 else:
     prior_sweep()
     show_missed_cases()
@@ -381,7 +381,7 @@ def show_stage2_alone():
 
 
 if P2 is None:
-    print("شغّلوا Cell 8 الأول (محتاجين P2)")
+    print("Run Cell 8 first (P2 is needed)")
 else:
     show_stage2_alone()
 
@@ -413,10 +413,10 @@ def report_stage2(label, p2):
     s2, sp2 = referable_metrics(y_val_full, final, 2)
     s3, sp3 = referable_metrics(y_val_full, final, 3)
     print(f"\n{label}")
-    print(f"   Stage 2 لوحده : QWK={cohen_kappa_score(y_va, pred_dr, weights='quadratic'):.4f}  Acc={np.mean(pred_dr == y_va):.3f}")
+    print(f"   Stage 2 alone : QWK={cohen_kappa_score(y_va, pred_dr, weights='quadratic'):.4f}  Acc={np.mean(pred_dr == y_va):.3f}")
     print(f"   Cascade       : QWK={qwk_c:.4f}  Acc={np.mean(final == y_val_full):.3f}")
     print(f"   Referable     : Sens={s2:.3f}  Spec={sp2:.3f}   | Sight-threatening: Sens={s3:.3f}  Spec={sp3:.3f}")
-    print("   Recall لكل درجة: " + "  ".join(f"{n}={r:.2f}" for n, r in zip(CLASS_NAMES, rec)))
+    print("   Recall per grade: " + "  ".join(f"{n}={r:.2f}" for n, r in zip(CLASS_NAMES, rec)))
 
 
 def predict_all_stage2():
@@ -429,9 +429,9 @@ def predict_all_stage2():
 def compare_stage2_models():
     probs = predict_all_stage2()
     if not probs:
-        print("مفيش موديلات Stage 2 محفوظة")
+        print("No saved Stage 2 models found")
         return None
-    print(f"Stage 1 threshold = {THR} | عدد موديلات Stage 2 اللي اتلقت: {len(probs)}")
+    print(f"Stage 1 threshold = {THR} | Stage 2 models found: {len(probs)}")
     for name, p2 in probs.items():
         report_stage2(name, p2)
     return probs
@@ -439,7 +439,7 @@ def compare_stage2_models():
 
 STAGE2_PROBS = None
 if P1 is None:
-    print("شغّلوا Cell 8 وCell 9 الأول")
+    print("Run Cell 8 and Cell 9 first")
 else:
     STAGE2_PROBS = compare_stage2_models()
 
@@ -449,10 +449,10 @@ else:
 ENSEMBLE_NAMES = None   # None = كل الموديلات | أو قايمة أسماء، مثال: ["best_severity_model.keras", "best_severity_model_eyepacs_ft.keras"]
 chosen = {k: v for k, v in (STAGE2_PROBS or {}).items() if ENSEMBLE_NAMES is None or k in ENSEMBLE_NAMES}
 if len(chosen) < 2:
-    print("محتاجين Cell 11 يكون اشتغل وفيه موديلين Stage 2 على الأقل (راجعوا ENSEMBLE_NAMES)")
+    print("Cell 11 must have run with at least two Stage 2 models (check ENSEMBLE_NAMES)")
 else:
     ens = np.mean(list(chosen.values()), axis=0)
-    report_stage2(f"Ensemble ({len(chosen)} موديلات: {', '.join(chosen)})", ens)
+    report_stage2(f"Ensemble ({len(chosen)} models: {', '.join(chosen)})", ens)
 
 
 # ============================== Cell 13 ==============================
@@ -467,7 +467,7 @@ _DARK = {
 def show_missed_images(min_grade=2, max_images=6):
     ids = np.where((y_val_full >= min_grade) & (P1 < THR))[0][:max_images]
     if len(ids) == 0:
-        print("مفيش حالات فايتة")
+        print("No missed cases")
         return
     with plt.rc_context(_DARK):
         fig, axes = plt.subplots(1, len(ids), figsize=(4 * len(ids), 4.5))
@@ -481,7 +481,7 @@ def show_missed_images(min_grade=2, max_images=6):
 
 
 if P1 is None:
-    print("شغّلوا Cell 8 الأول")
+    print("Run Cell 8 first")
 else:
     show_missed_images()
 
@@ -490,11 +490,11 @@ else:
 # حفظ احتمالات الـ Validation (بتخلي باقي الفريق يشتغل على Confidence Analysis / MLflow / الاختبارات من غير GPU)
 def save_val_probs(path="/kaggle/working/val_probs_v1.npz"):
     if P1 is None:
-        print("شغّلوا Cell 8 الأول")
+        print("Run Cell 8 first")
         return
     np.savez_compressed(path, p1=P1, p2=P2, y_true=y_val_full, threshold=THR,
                         stage2_model=os.path.basename(STAGE2_PATH))
-    print("اتحفظ:", path, "| الموديل:", os.path.basename(STAGE2_PATH))
+    print("Saved:", path, "| model:", os.path.basename(STAGE2_PATH))
 
 
 save_val_probs()
