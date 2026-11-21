@@ -4,7 +4,7 @@ Put these here (they are not included in this bundle — copy them from the team
 - `DEPI_ML_Projects_Booklet.pdf`                   (the track booklet: "Microsoft Machine Learning Projects")
 Included:
 - `DR_Project_Proposal.pdf` — the approved proposal (5 milestones).
-- `legacy/` — early planning guides written when the team was starting. **Partly outdated**: preprocessing code there was superseded by `src/retinograde_inference.py::preprocess_rgb`; the plans predate the cascade. Use for history only.
+- Early planning guides (partly outdated) and the one-time GitHub sync plan are in [`archive/docs/`](../archive/docs).
 Model v2 (Phases 1–3):
 - `v2_model_report.md` — **start here**: what was done, what changed, final performance, limitations.
 - `experiments.md` — every run and decision, with data versions and the generated results tables.

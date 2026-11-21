@@ -1,3 +1,5 @@
+> **Historical document.** Executed as PR #1 on 2026-11-22. The paths below describe the repository *before* the v2 clean-up that moved the team notebooks to `notebooks/exploration/` and v1 files to `archive/v1/` (see `archive/README.md`).
+
 # GitHub sync plan: local project → `OmarAshour1/Diabetic-Retinopathy-Project`
 
 **In short:** the GitHub repo and this local project are **two separate copies with no shared history**, and only one file (`README.md`) exists in both. The plan adds the new work on a branch `sync/claude-updates`, merges the two READMEs, and leaves every teammate file on GitHub exactly where it is. Nothing is deleted. Nothing is pushed, and no PR is opened, until you approve. A few decisions are needed from you (section 6).
