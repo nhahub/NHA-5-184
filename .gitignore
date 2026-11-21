@@ -1,0 +1,37 @@
+# secrets
+kaggle.json
+.env
+*.pem
+# data & big artifacts (never commit competition images or datasets)
+data/*
+!data/README.md
+*.npy
+*.npz
+mlruns/
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# keep model files out of git unless you decide otherwise (they are ~15 MB each)
+models/*.keras
+# --- added in Phase 1 setup ---
+.kaggle/
+*.h5
+*.weights.h5
+kaggle/runs/
+.pytest_cache/
+.venv/
+kaggle/_build/
+
+# figures derived from competition images (APTOS/EyePACS rules: never commit)
+docs/figures_private/
+
+# --- added for the GitHub sync (2026-11-22) ---
+# model files anywhere (models live on Kaggle; teammates' v1 model already tracked on GitHub is unaffected)
+*.keras
+# credentials must never be committed, wherever they end up
+credentials.json
+access_token
+# local-only AI working files (kept on the developer laptop, not published)
+CLAUDE.md
+KICKOFF_PROMPT.md
