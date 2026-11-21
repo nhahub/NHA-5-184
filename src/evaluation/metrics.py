@@ -63,7 +63,7 @@ def per_class_pr(y_true, y_pred, n_classes: int = N_CLASSES) -> dict:
 
 def referable_metrics(y_true, y_pred, thr: int = 2):
     """Sensitivity / specificity of 'grade >= thr' (thr=2 referable, thr=3 sight-threatening).
-    Port of referable_metrics() from stage2_severity_cascade.py (Cell 9)."""
+    Port of referable_metrics() from the v1 script archive/v1/scripts/stage2_severity_cascade.py (Cell 9)."""
     t, p = _as_int(y_true) >= thr, _as_int(y_pred) >= thr
     sens = (t & p).sum() / max(t.sum(), 1)
     spec = (~t & ~p).sum() / max((~t).sum(), 1)

@@ -164,7 +164,7 @@ def aptos_raw():
 
 # ----------------------------------------------------------------------------- 4. legacy preprocessing + provenance
 # v1 recon (2026-11-19): only 280/733 X_val rows were pixel-exact under the current preprocess_rgb.
-# The legacy guide (docs/legacy/Data_Preprocessing_Guide.md) crops the black border and then
+# The legacy guide (archive/docs/legacy/Data_Preprocessing_Guide.md) crops the black border and then
 # STRETCHES to 224 (no white-frame crop, no pad-to-square). We test candidate variants, keep the one
 # that reproduces X_val exactly, and map every legacy row to an APTOS id with a one-to-one assignment.
 def _crop_black(img):

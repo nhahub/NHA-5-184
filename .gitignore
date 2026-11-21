@@ -32,6 +32,3 @@ docs/figures_private/
 # credentials must never be committed, wherever they end up
 credentials.json
 access_token
-# local-only AI working files (kept on the developer laptop, not published)
-CLAUDE.md
-KICKOFF_PROMPT.md

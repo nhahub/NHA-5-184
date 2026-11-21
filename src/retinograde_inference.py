@@ -25,7 +25,7 @@ MODEL_VERSION = "v1"
 IMG_SIZE = 224
 DEFAULT_THRESHOLD = 0.3          # threshold بتاع Stage 1 (اتختار من جدول Cell 8)
 CLASS_NAMES = ["No DR", "Mild", "Moderate", "Severe", "Proliferative DR"]
-DISCLAIMER = "أداة مساعدة للفرز الأولي وليست بديلاً عن تشخيص طبيب العيون."
+DISCLAIMER = "Decision-support tool for initial screening only; it does not replace diagnosis by an ophthalmologist."
 
 
 # ----------------------------------------------------------------------
@@ -36,19 +36,19 @@ def load_rgb(source):
     if isinstance(source, (str, os.PathLike)):
         img = cv2.imread(str(source))
         if img is None:
-            raise ValueError(f"مش قادر أقرا الصورة: {source}")
+            raise ValueError(f"Cannot read the image: {source}")
         return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     if isinstance(source, (bytes, bytearray)):
         img = cv2.imdecode(np.frombuffer(source, np.uint8), cv2.IMREAD_COLOR)
         if img is None:
-            raise ValueError("الملف مش صورة صالحة")
+            raise ValueError("The file is not a valid image")
         return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     if hasattr(source, "read"):
         return load_rgb(source.read())
     arr = np.asarray(source)
     if arr.ndim == 3 and arr.shape[2] == 3 and arr.dtype == np.uint8:
         return arr
-    raise ValueError("نوع الصورة مش مدعوم (استخدموا مسار / bytes / numpy RGB uint8)")
+    raise ValueError("Unsupported image type (use a file path, bytes, or a numpy RGB uint8 array)")
 
 
 # ----------------------------------------------------------------------
@@ -119,7 +119,7 @@ def transform_mask(mask, geom, target_size=IMG_SIZE):
     if m.dtype == bool:
         m = m.astype(np.uint8)
     if tuple(m.shape[:2]) != tuple(geom["orig_shape"]):
-        raise ValueError(f"مقاس الـ mask {m.shape[:2]} مختلف عن الصورة الأصلية {geom['orig_shape']}")
+        raise ValueError(f"Mask size {m.shape[:2]} differs from the original image size {geom['orig_shape']}")
     if geom["crop1"]:
         x, y, w, h = geom["crop1"]
         m = m[y:y + h, x:x + w]
@@ -178,8 +178,8 @@ class RetinoGrade:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="RetinoGrade AI - تصنيف صور قاع العين")
-    ap.add_argument("images", nargs="+", help="مسارات الصور")
+    ap = argparse.ArgumentParser(description="RetinoGrade AI - diabetic retinopathy grading from fundus images")
+    ap.add_argument("images", nargs="+", help="Image file paths")
     ap.add_argument("--stage1", default=os.environ.get("RG_STAGE1", "models/stage1_v1.keras"))
     ap.add_argument("--stage2", default=os.environ.get("RG_STAGE2", "models/best_severity_model.keras"))
     ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)

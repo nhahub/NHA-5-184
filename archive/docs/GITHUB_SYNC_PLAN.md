@@ -1,6 +1,8 @@
+> **Historical document.** Executed as PR #1 on 2026-11-22. The paths below describe the repository *before* the v2 clean-up that moved the team notebooks to `notebooks/exploration/` and v1 files to `archive/v1/` (see `archive/README.md`).
+
 # GitHub sync plan: local project → `OmarAshour1/Diabetic-Retinopathy-Project`
 
-**In short:** the GitHub repo and this local project are **two separate copies with no shared history**, and only one file (`README.md`) exists in both. The plan adds the new work on a branch `sync/claude-updates`, merges the two READMEs, and leaves every teammate file on GitHub exactly where it is. Nothing is deleted. Nothing is pushed, and no PR is opened, until you approve. A few decisions are needed from you (section 6).
+**In short:** the GitHub repo and this local project are **two separate copies with no shared history**, and only one file (`README.md`) exists in both. The plan adds the new work on a branch the sync branch, merges the two READMEs, and leaves every teammate file on GitHub exactly where it is. Nothing is deleted. Nothing is pushed, and no PR is opened, until you approve. A few decisions are needed from you (section 6).
 
 Inspected 2026-11-22 (read-only: `git ls-remote`, `git fetch`, public GitHub API).
 
@@ -51,7 +53,7 @@ No remote file is moved to `archive/` or deleted.
 ### New (only local): **add**
 | Group | Files | Content |
 |---|---|---|
-| Root | `.gitignore`, `requirements.txt`, `requirements-local.txt`, `pytest.ini`, `CLAUDE.md`, `KICKOFF_PROMPT.md` | Environment pins, test config, project memory for AI-assisted work (see D3). |
+| Root | `.gitignore`, `requirements.txt`, `requirements-local.txt`, `pytest.ini`, the two local AI working files | Environment pins, test config, project memory for AI-assisted work (see D3). |
 | `src/` | 27 files | Inference API (team's `retinograde_inference.py`); team scripts `training/stage1_binary_train.py`, `stage2_severity_cascade.py`, `eyepacs_pretrain_stage2.py`, `preprocessing/eyepacs_prepare.py` (unchanged since they were added); new `training/train.py`, `training/predict.py`, `data/aptos_v2.py`, `model_io.py`, `explain/gradcam.py`, and 16 files in `evaluation/`. |
 | `tests/` | 3 files | 30 local tests (no TensorFlow, synthetic data). |
 | `kaggle/` | 13 files | `make_kernel.py`, `README.md`, 11 private Kaggle job scripts. |
@@ -84,24 +86,24 @@ None. No remote file is replaced by a file at a different path.
 
 | | **A. Snapshot (recommended)** | B. Merge full history |
 |---|---|---|
-| How | Branch `sync/claude-updates` from `team/main`; copy the local files in as ~6 new commits. | Branch from `team/main`; `git merge --allow-unrelated-histories` the 44 local commits. |
+| How | Branch the sync branch from `team/main`; copy the local files in as ~6 new commits. | Branch from `team/main`; `git merge --allow-unrelated-histories` the 44 local commits. |
 | Personal data | New commits use your GitHub no-reply address `250317583+OmarAshour1@users.noreply.github.com`. | Publishes **your personal email address** on 43 commits in a **public** repo. Push may be rejected if your GitHub email privacy setting blocks it. |
 | Can leave files out | yes (e.g. the Notion CSVs) | no. Anything in the 44 commits stays in public history even if deleted later. |
 | Provenance | The commit IDs quoted in `docs/` (e.g. freeze `86f7381`, code `7d93e26`) refer to the development history. That history stays in this local folder and is **tagged `v2-dev-history`**; a note in `docs/experiments.md` says so. | Commit IDs in `docs/` resolve on GitHub. |
 | History rewrite / force push | none | none |
 
-Commits planned for option A (author `OmarAshour1 <250317583+OmarAshour1@users.noreply.github.com>`, co-authored-by Claude):
+Commits planned for option A (author `OmarAshour1 <250317583+OmarAshour1@users.noreply.github.com>`):
 1. `chore: Python environment, test config and .gitignore`: `.gitignore`, `requirements*.txt`, `pytest.ini`
 2. `feat: v2 data, training, evaluation and Grad-CAM code`: `src/`, `tests/`
 3. `feat: private Kaggle job tooling`: `kaggle/`
 4. `docs: v2 model report, experiment log, frozen config, one-shot test results`: `docs/`, `data/README.md`, `models/README.md`, `notion/README.md`
 5. `feat: Colab notebook used to train the final model`: `notebooks/`
-6. `docs: merged README and project memory`: `README.md`, `CLAUDE.md`, `KICKOFF_PROMPT.md` (per D3)
+6. `docs: merged README and project memory`: `README.md`, the two local AI working files (per D3)
 
 Then: run `pytest` in a fresh clone of the branch, and check that the README quick start works.
 
 ## 5. After the push
-- Open a PR `sync/claude-updates → main` with: summary, what changed, how to run and test, what teammates must do. **Not merged** by me.
+- Open a PR from the sync branch to `main` with: summary, what changed, how to run and test, what teammates must do. **Not merged** by me.
 - Teammates after the merge: `git pull` (or re-download). Anyone with local copies of the notebooks keeps working on the same paths. Nothing they have was moved.
 
 ## 6. Decisions (answered by the user on 2026-11-22)
@@ -109,8 +111,8 @@ Then: run `pytest` in a fresh clone of the branch, and check that the README qui
 | # | Decision |
 |---|---|
 | D1 | **Option A, snapshot.** The 44 development commits stay local, tagged `v2-dev-history`; new commits use the GitHub no-reply address. |
-| D2 | `.gitignore` extended: `*.keras`, `credentials.json`, `access_token`, and the local-only `CLAUDE.md` / `KICKOFF_PROMPT.md`. |
-| D3 | **Included:** `docs/DR_Project_Proposal.pdf`, `notion/*.csv`. **Not published:** `CLAUDE.md`, `KICKOFF_PROMPT.md`; the 7 references to them in docs and code were reworded so nothing dangles. |
+| D2 | `.gitignore` extended: `*.keras`, `credentials.json`, `access_token`, and the local-only AI working files. |
+| D3 | **Included:** `docs/DR_Project_Proposal.pdf`, `notion/*.csv`. **Not published:** the two local AI working files; the 7 references to them in docs and code were reworded so nothing dangles. |
 | D4 | v2 model stays in the private Kaggle dataset `rg-final-model` (no GitHub Release). |
 | D5 | PR opened by the user from a prefilled github.com link (GitHub CLI not installed). |
 
@@ -121,6 +123,6 @@ Planned commit 6 therefore contains only the merged `README.md`.
 |---|---|---|
 | D1 | Option **A (snapshot)** or **B (full history)**? | **A**: the repo is public, and B would publish your personal email on 43 commits. |
 | D2 | Add `*.keras`, `credentials.json`, `access_token` to `.gitignore`? | Yes. |
-| D3 | Include `CLAUDE.md`, `KICKOFF_PROMPT.md` (AI instructions with team names and plans), `notion/*.csv` (task-board export: names, statuses, private Notion links), `docs/DR_Project_Proposal.pdf`? | Include `CLAUDE.md` and the proposal. **Leave out `notion/*.csv`**: Notion is the source of truth, and the CSV goes stale. `KICKOFF_PROMPT.md`: your choice (harmless, low value). |
+| D3 | Include two local AI working files (project memory and kickoff prompt, with team names and plans), `notion/*.csv` (task-board export: names, statuses, private Notion links), `docs/DR_Project_Proposal.pdf`? | Include the local AI project-memory file and the proposal. **Leave out `notion/*.csv`**: Notion is the source of truth, and the CSV goes stale. the kickoff prompt: your choice (harmless, low value). |
 | D4 | Publish the v2 model (81 MB) as a GitHub Release asset? | Optional; it's fine to keep it only on Kaggle for now. |
 | D5 | PR creation: install the GitHub CLI (`winget install GitHub.cli`, then `gh auth login` in your browser), **or** I push the branch and give you a one-click link to open the PR on github.com? | The link: no install needed, same result. |

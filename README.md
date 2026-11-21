@@ -27,35 +27,37 @@ One **EfficientNetB0** with a 5-class softmax, **384×384** input, trained on **
 | EyePACS test patients, 3,428 images | 0.669 | 73.8% | 0.907 | 0.970 |
 | IDRiD (India), 516 images | 0.714 | 51.2% | 0.946 | 0.916 |
 
-The previous version (v1, a two-model cascade at 224px) scored QWK 0.840 / 78.3% on the same 733 APTOS images. The improvement is **+0.058 QWK** [95% CI +0.034, +0.093].
+The previous version (v1, a two-model cascade at 224px, now in [`archive/v1/`](archive/v1)) scored QWK 0.840 / 78.3% on the same 733 APTOS images. The improvement is **+0.058 QWK** [95% CI +0.034, +0.093].
 Full report: [`docs/v2_model_report.md`](docs/v2_model_report.md) · all experiments: [`docs/experiments.md`](docs/experiments.md) · test tables: [`docs/test_results.md`](docs/test_results.md).
 
 ## Repository layout
 
 ```
-APSOT Dataset/               team notebooks: APTOS preparation & preprocessing, one-stage training experiments
-                             (01–06), two-stage training (stage 1 notebook + v1 Stage 1 model file)
-Dataset 2015/                team notebooks: EyePACS 2015 audit & cleaning, image validation, quality analysis
-Datasets/                    links to the Kaggle datasets
-src/
-  retinograde_inference.py   inference API (RetinoGrade class, preprocess_rgb = the frozen preprocessing contract)
+src/                         ← model v2 pipeline
+  retinograde_inference.py   inference API (RetinoGrade class; preprocess_rgb = the frozen preprocessing contract)
   data/aptos_v2.py           v2 data access, augmentation, batched prediction
-  training/train.py          generic trainer (candidates A/B/C, folds, seeds, 384px, APTOS+EyePACS, full-pool model)
-  training/predict.py        re-scoring saved models (TTA, guarded one-shot test)
+  training/train.py          trainer (5-class model, folds, seeds, 384px, APTOS + EyePACS, full-pool final model)
+  training/predict.py        re-scoring saved models
   evaluation/                metrics (QWK, sensitivity/specificity, AUC, bootstrap CIs) + one script per experiment
-  explain/gradcam.py         Grad-CAM for the nested EfficientNet (Phase 4)
+  explain/gradcam.py         Grad-CAM for the nested EfficientNet
   model_io.py                how to load trained models safely
-  training/stage1_*.py, stage2_*.py, eyepacs_*.py, preprocessing/   v1 scripts written by the team (kept unchanged)
-kaggle/
-  make_kernel.py             builds / pushes / pulls private Kaggle jobs
-  kernels/                   the job scripts (data build, training, scoring, final test)
-notebooks/colab_final_model.ipynb   how the final model was trained on Colab
-docs/                        report, experiment log, frozen config, test results, proposal, legacy plans
 tests/                       local tests (no TensorFlow needed)
-notion/                      task-board export (the live board is in Notion)
+kaggle/                      private Kaggle jobs: make_kernel.py + kernels/ (data build, training, scoring, final test)
+notebooks/
+  colab_final_model.ipynb    how the final v2 model was trained
+  exploration/               the team's exploration notebooks (APTOS preparation + experiments, EyePACS 2015 audit)
+docs/                        v2 report, experiment log, frozen config, test results, proposal
+data/  models/               where the data and the models live (nothing is stored in the repo)
+notion/                      task-board export
+archive/                     v1 (model file, scripts, Stage 1 notebook) and old plans; not used by v2
 ```
 
-The notebooks are the team's exploration history; `src/` is the reproducible pipeline that produced model v2.
+`src/` is the reproducible pipeline that produced model v2. `notebooks/exploration/` documents how the team got there, and `archive/` keeps v1 for reference.
+
+## Links
+
+- Datasets: [APTOS 2019 Blindness Detection](https://www.kaggle.com/competitions/aptos2019-blindness-detection) · [EyePACS 2015 (224px mirror)](https://www.kaggle.com/datasets/sovitrath/diabetic-retinopathy-2015-data-colored-resized) · [EyePACS 2015 (hi-res mirror)](https://www.kaggle.com/datasets/tanlikesmath/diabetic-retinopathy-resized) · [IDRiD](https://www.kaggle.com/datasets/aaryapatel98/indian-diabetic-retinopathy-image-dataset). Details in [`data/README.md`](data/README.md).
+- Team task board (Notion): [Diabetic Retinopathy Project — Task Board](https://app.notion.com/p/Diabetic-Retinopathy-Project-Task-Board-3e1a4e61702980ef972cd3df4d63dd66)
 
 ## Quick start (local, no GPU, no data)
 
@@ -101,4 +103,4 @@ Note: `src/retinograde_inference.py` still loads the **v1** cascade. Switching i
 
 Omar Khaled Mohamed Nasr (team leader) · Omar Ashour Ragheb Abdelkarim · Eyad Tamer Amin Zayed Zayed · Omar Ibrahim Hussein Hussein Tibah · Ahmed Samy Soliman Atia · Yahia Salah Eldeen Fahmy.
 
-*Parts of the code, experiments and documentation were produced with AI assistance (Claude Code). See the note at the end of [`docs/v2_model_report.md`](docs/v2_model_report.md).*
+*Parts of the code, experiments and documentation were produced with the help of an AI coding assistant and reviewed by the team.*
