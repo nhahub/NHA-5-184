@@ -56,9 +56,11 @@ CPU time per image, file → result (Kaggle CPU, 30 images, batch size 1):
 | 2 | 74 ms | 111 ms | **183 ms** | 257 ms |
 | 4 | 72 ms | 98 ms | **164 ms** | 248 ms |
 
-Loading the model takes 1.5 s, once. The 655 ms reported earlier was a fold model of the same architecture called without the compiled graph, on another Kaggle machine, so not all of the difference is due to the code.
+Loading the model takes 1.5 s on Kaggle, once (8 s on the laptop, mostly importing TensorFlow).
 
-Tests: `tests/test_inference_v2.py` (19, no TensorFlow) and `tests/test_real_model_v2.py` (4, need TensorFlow and the model file).
+Effect of the compiled graph alone (same model, same machine, AMD Ryzen 7 7435HS laptop): plain call 649 ms, compiled 189 ms per image. The 655 ms reported in November was the plain call.
+
+Tests: `tests/test_inference_v2.py` (19, no TensorFlow) and `tests/test_real_model_v2.py` (4, need TensorFlow 2.21 and the model file). Both run locally in the TensorFlow environment (`.venv-tf`): 23 passed on 2026-11-22.
 
 ## Limits
 - The probabilities are not calibrated here.
