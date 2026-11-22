@@ -98,7 +98,7 @@ python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_
 | M4 MLflow, Streamlit, monitoring | not started |
 | M5 Documentation and presentation | in progress |
 
-Note: `src/retinograde_inference.py` still loads the **v1** cascade. Switching it to the v2 model at 384px, with the same output keys, is the next step.
+Note: `src/retinograde_inference.py` runs model **v2** at 384px with the same output keys as v1 ([`docs/components/inference.md`](docs/components/inference.md)). Live status: [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Team
 

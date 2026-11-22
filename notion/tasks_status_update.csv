@@ -1,0 +1,19 @@
+ID,Task,New status,Evidence
+T01,"Dataset Collection, EDA and Quality",Done,No change (already Done on the board)
+T02,Dataset Splitting,Done,v2 split: 733 test + 5 folds grouped by duplicates (docs/experiments.md)
+T03,Image Preprocessing & Augmentation,Done,preprocess_rgb at 384px is bit-exact between training and inference (120/120 images)
+T04,Quality Assessment Dataset Preparation,In progress,EyeQ names match the EyePACS mirror 12543/12543 and DR grades agree 100%
+T05,Quality Assessment Model,Not started,
+T06,Quality Model Evaluation,Not started,
+T07,DR Classification Model,Done,Model v2: EfficientNetB0 5 classes 384px (docs/v2_model_report.md)
+T08,Imbalance Handling,Done,v2 trains with class weights (power 0.5); the v1 comparison of power 1.0 vs 0.5 showed no meaningful difference
+T09,Model Training,Done,Final model trained on APTOS + 8000 EyePACS images (notebooks/colab_final_model.ipynb)
+T10,DR Model Evaluation,Done,One-shot test: APTOS QWK 0.898 and accuracy 83.8% (docs/test_results.md)
+T11,Confidence Analysis,Not started,
+T12,Explainable AI (Grad-CAM),In progress,Code in src/explain; run on the real model pending
+T13,IDRiD Grad-CAM Validation,In progress,Lesion-overlap metrics written; run pending
+T14,Azure Model Deployment,Not started,
+T15,MLflow Tracking Setup,Not started,
+T16,Streamlit Interface,Not started,
+T17,System Integration & Testing,Not started,
+T18,Final Documentation & Presentation,In progress,v2 model report and component pages written
