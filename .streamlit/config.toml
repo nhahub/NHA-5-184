@@ -1,0 +1,7 @@
+# The demo app is for one machine: listen on localhost only, no telemetry, uploads limited to 25 MB.
+[server]
+address = "localhost"
+maxUploadSize = 25
+headless = true
+[browser]
+gatherUsageStats = false

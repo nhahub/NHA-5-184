@@ -1,0 +1,9 @@
+# Run the demo app (CPU): Python 3.11, 3.12 or 3.13. Pinned to the versions the models were trained with.
+# python -m venv .venv-app && .venv-app\Scripts\activate   (Windows)  |  source .venv-app/bin/activate
+# pip install -r requirements-app.txt
+tensorflow==2.21.0
+keras==3.13.2
+numpy==2.1.3
+h5py==3.14.0
+opencv-python-headless==4.14.0.94
+streamlit==1.48.1
