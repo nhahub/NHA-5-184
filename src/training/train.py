@@ -150,6 +150,8 @@ def build_model(kind: str, img_size: int, dropout: float, weights="imagenet"):
         outputs = layers.Dense(1, activation="sigmoid", dtype="float32")(x)
     elif kind == "softmax4":
         outputs = layers.Dense(4, activation="softmax", dtype="float32")(x)
+    elif kind == "softmax3":
+        outputs = layers.Dense(3, activation="softmax", dtype="float32")(x)
     elif kind == "softmax5":
         outputs = layers.Dense(5, activation="softmax", dtype="float32")(x)
     elif kind == "regression":

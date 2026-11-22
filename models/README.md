@@ -14,6 +14,9 @@ Never overwrite these; new models get new names (`*_v2`). Record file hashes in 
 - Local `models/`: `best_severity_model.keras`, `best_severity_model_phaseA.keras`, and an older weights-only `best_effnet_stage1.weights.h5` (not the stage1_v1 model). There is no local `stage1_v1.keras` or `val_probs_v1.npz`. The Kaggle kernel `rg-v1-repro` regenerates `val_probs_v1.npz`.
 - sha256 hashes: `docs/experiments.md` → "Model artifacts".
 
+## Quality gate (2026-11-22)
+- `quality_b0_224.keras` (17 MB) — EfficientNetB0 224px, 3 classes (Good / Usable / Reject). Private Kaggle job `rg-quality-train`, file `quality_b0_224_s42.keras` (81 MB because it keeps optimizer state). The local copy is the same weights without optimizer state (predictions identical). sha256 of the local copy starts `9d9bbb07dbab46a1`. Set `RG_QUALITY_MODEL` to its path, or keep the default `models/quality_b0_224.keras`.
+
 ## v2 (final, frozen 2026-11-21)
 - `B_full_s42_384_mix_model.keras` (81 MB) — EfficientNetB0 5-class, 384×384, APTOS + EyePACS. Private Kaggle dataset
   `omarashour206/rg-final-model` (trained on Colab, TF 2.21). Settings: `docs/frozen_config.json`.
