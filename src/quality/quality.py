@@ -59,11 +59,11 @@ def quality_result(probs3) -> dict:
 
 class QualityGate:
     def __init__(self, model_path=None):
-        import tensorflow as tf
-        from model_io import load_model
         path = str(model_path or os.environ.get(MODEL_ENV) or DEFAULT_MODEL_PATH)
         if not os.path.isfile(path):
             raise FileNotFoundError(f"Quality model not found: {path}. Pass model_path or set {MODEL_ENV} (see models/README.md).")
+        import tensorflow as tf
+        from model_io import load_model
         self.model_path, self.model = path, load_model(path)
         size, n_out = int(self.model.input_shape[1]), int(self.model.output_shape[-1])
         if (size, n_out) != (QUALITY_IMG_SIZE, 3):
