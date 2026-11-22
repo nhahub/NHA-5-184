@@ -118,11 +118,20 @@ def idrid_items():
     return [(k, imgs[k], masks.get(k, {})) for k in sorted(imgs)]
 
 
+BAD_MASKS = []
+
+
 def load_mask(path, shape):
-    a = np.array(Image.open(path))
+    """IDRiD masks are RGB, RGBA or palette TIFs. Only the colour channels count: an opaque alpha channel would
+    mark every pixel as lesion (this happened for IDRiD_81 in the first run)."""
+    im = Image.open(path)
+    a = np.array(im.convert("RGB") if im.mode in ("RGBA", "P", "CMYK", "LA") else im)
     a = (a > 0).any(axis=2) if a.ndim == 3 else a > 0
     if a.shape != shape:
         raise ValueError(f"{path}: mask {a.shape} vs image {shape}")
+    if a.mean() > 0.5:                 # a lesion mask never covers half of the photo
+        BAD_MASKS.append(f"{os.path.basename(path)} covers {a.mean():.2f} (mode {im.mode})")
+        return np.zeros(shape, np.uint8)
     return a.astype(np.uint8)
 
 
@@ -224,6 +233,7 @@ def idrid(m, rand, summary):
             summary["alignment"][t] = {"images": int(len(c)), "mean_contrast_inside_minus_ring": float(c.mean()),
                                        "images_with_expected_sign": int((c > 0).sum() if t in ("OD", "EX", "SE") else (c < 0).sum()),
                                        "mean_contrast_if_mask_mirrored": float(mir.mean())}
+    summary["bad_masks_ignored"] = BAD_MASKS
     summary["small_lesions"] = {"MA_pixels_nearest_resize": int(al.MA_pixels_nearest.sum()), "MA_pixels_keep_small": int(al.MA_pixels_keep_small.sum())}
     pd.DataFrame(rows).to_csv(f"{OUT}/gradcam_idrid.csv", index=False)
     save_rows(proof, "idrid_alignment_proof", 4)
