@@ -174,3 +174,39 @@ def test_v1_must_be_asked_for_explicitly():
 def test_bad_inputs_raise_value_error(bad):
     with pytest.raises(ValueError):
         R.load_rgb(bad)
+
+
+def test_file_names_with_arabic_letters_can_be_read(tmp_path):
+    """cv2.imread cannot open such names on Windows."""
+    import cv2
+    img = fundus(h=300, w=400)
+    f = tmp_path / "صورة عين.png"
+    f.write_bytes(cv2.imencode(".png", img[..., ::-1])[1].tobytes())
+    np.testing.assert_array_equal(R.load_rgb(str(f)), img)
+    np.testing.assert_array_equal(R.load_rgb(f), img)
+
+
+def test_empty_input_is_a_value_error_and_streams_are_rewound(tmp_path):
+    import io
+
+    import cv2
+    with pytest.raises(ValueError):
+        R.load_rgb(b"")
+    empty = tmp_path / "empty.png"
+    empty.write_bytes(b"")
+    for bad in (str(empty), str(tmp_path / "missing.png")):
+        with pytest.raises(ValueError, match="Cannot read the image"):
+            R.load_rgb(bad)
+    img = fundus(h=300, w=400)
+    stream = io.BytesIO(cv2.imencode(".png", img[..., ::-1])[1].tobytes())
+    stream.read()                                                          # someone read it before
+    np.testing.assert_array_equal(R.load_rgb(stream), img)
+
+
+def test_default_model_path_works_from_any_folder(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    p = R.default_path(R.DEFAULT_MODEL_PATH)
+    assert os.path.isabs(p) and p.replace("\\", "/").endswith(R.DEFAULT_MODEL_PATH)
+    (tmp_path / "models").mkdir()
+    (tmp_path / R.DEFAULT_MODEL_PATH).write_bytes(b"x")
+    assert R.default_path(R.DEFAULT_MODEL_PATH) == R.DEFAULT_MODEL_PATH    # a file in the current folder comes first

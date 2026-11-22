@@ -14,6 +14,6 @@ T12,Explainable AI (Grad-CAM),Done,Grad-CAM on the real v2 model with sanity che
 T13,IDRiD Grad-CAM Validation,Done,81 images: hottest pixel on a lesion 32% vs 5% by chance; alignment proven (docs/components/gradcam.md)
 T14,Azure Model Deployment,Not started,
 T15,MLflow Tracking Setup,Not started,
-T16,Streamlit Interface,Built and tested headlessly; first tried by a person with one photo (2026-11-22),app/streamlit_app.py; 7 page tests with the real models; localhost only (docs/components/app.md)
+T16,Streamlit Interface,Built and tested headlessly; first tried by a person with one photo (2026-11-22),app/streamlit_app.py; 15 page tests with the real models; localhost only (docs/components/app.md)
 T17,System Integration & Testing,Not started,
 T18,Final Documentation & Presentation,In progress,v2 model report and component pages written

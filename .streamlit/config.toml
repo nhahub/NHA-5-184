@@ -5,3 +5,6 @@ maxUploadSize = 25
 headless = true
 [browser]
 gatherUsageStats = false
+[client]
+# no "Deploy" button: this page must not be published by accident
+toolbarMode = "viewer"

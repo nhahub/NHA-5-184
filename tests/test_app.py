@@ -28,11 +28,22 @@ def run(data=None, gate=False):
     os.environ["RG_APP_TEST"] = "1"
     os.environ[R.MODEL_ENV] = MODEL
     os.environ["RG_APP_TEST_NO_GATE"] = "" if gate else "1"
+    from streamlit import config
+    if not config.get_option("server.address"):                # pytest was started outside the project folder
+        config.set_option("server.address", "localhost")
+    if run.gate != gate:                                       # the pipeline is cached: reload it when the setting changes
+        import streamlit as st
+        st.cache_resource.clear()
+        st.cache_data.clear()
+        run.gate = gate
     at = AppTest.from_file(APP, default_timeout=300)
     if data is not None:
         at.session_state["test_bytes"] = data
     at.run()
     return at
+
+
+run.gate = None
 
 
 def png(img):
@@ -70,6 +81,9 @@ def test_heatmap_toggle_does_not_crash():
 
 @pytest.mark.parametrize("data,expected", [
     (b"this is not an image", "could not be read"),
+    (b"", "could not be read"),
+    (png(np.zeros((8000, 8000, 3), np.uint8)), "too many pixels"),          # 64 megapixels in a tiny file
+    (png(np.zeros((16000, 16000, 3), np.uint8)), "too many pixels"),        # Pillow refuses this one by itself
     (png(np.full((40, 500, 3), 80, np.uint8)), "too small"),
 ])
 def test_bad_files_are_explained_not_crashed(data, expected):
@@ -88,12 +102,59 @@ def test_rejected_photo_shows_no_grade():
     gate_path = os.environ.get(Q.MODEL_ENV) or os.path.join(ROOT, Q.DEFAULT_MODEL_PATH)
     if not os.path.isfile(gate_path):
         pytest.skip("quality model not available")
-    import streamlit as st
-    st.cache_resource.clear()
-    st.cache_data.clear()
     os.environ[Q.MODEL_ENV] = gate_path
     at = run(png(fundus(h=1200, w=1600)), gate=True)
     assert not at.exception
     assert any("too low to grade" in e.value for e in at.error)
     import re
     assert not at.metric and re.search(r"Grade d -", text(at)) is None    # the sidebar only lists the grade names
+
+
+def test_page_shows_no_technical_json_and_no_internal_status():
+    at = run(png(fundus(h=1200, w=1600)))
+    assert not at.json and not at.expander
+    t = text(at)
+    assert "review rule:" not in t and "not approved" not in t
+
+
+def test_probability_bars_are_in_clinical_order_on_a_fixed_axis():
+    import json
+    at = run(png(fundus(h=1200, w=1600)))
+    specs = [json.loads(e.proto.spec) for e in at.main if getattr(e, "type", "") == "arrow_vega_lite_chart"]
+    assert len(specs) == 1
+    enc = specs[0]["encoding"]
+    assert enc["y"]["sort"] is None and enc["x"]["scale"]["domain"] == [0, 1]
+
+
+def test_confidence_is_never_shown_as_100_percent(monkeypatch):
+    import review
+    real = review.assess
+    monkeypatch.setattr(review, "assess", lambda *a, **k: {**real(*a, **k), "confidence_calibrated": 0.9997})
+    at = run(png(fundus(h=1200, w=1600)))
+    assert [m.value for m in at.metric if m.label == "Calibrated confidence"] == [">99%"]
+
+
+def test_a_crash_in_the_analysis_is_explained(monkeypatch):
+    import streamlit as st
+    from pipeline import RetinoPipeline
+    st.cache_data.clear()
+
+    def boom(self, source):
+        raise RuntimeError("secret path C:/x")
+    monkeypatch.setattr(RetinoPipeline, "predict", boom)
+    at = run(png(fundus(h=700, w=900, seed=11)))
+    assert not at.exception and any("could not be analysed" in e.value for e in at.error)
+    assert "secret path" not in text(at)
+
+
+def test_page_refuses_to_run_open_to_the_network(monkeypatch):
+    from streamlit import config
+    old = config.get_option("server.address")
+    try:
+        config.set_option("server.address", "0.0.0.0")
+        at = run(png(fundus(h=700, w=900, seed=12)))
+        assert any("Stopped" in e.value for e in at.error) and not at.metric
+        monkeypatch.setenv("RG_ALLOW_NETWORK", "1")                        # a deliberate deployment
+        assert len(run(png(fundus(h=700, w=900, seed=12))).metric) == 3
+    finally:
+        config.set_option("server.address", old)

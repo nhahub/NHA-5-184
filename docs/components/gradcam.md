@@ -29,6 +29,8 @@ Grad-CAM was computed on 25 EyePACS **dev** images (5 per true grade; images the
 | all layers | +0.07 | −0.02 |
 | *(reference: maps of two different images)* | +0.08 | +0.08 |
 
+*Note (2026-11-22):* these numbers come from a rank correlation that ranked tied zeros by position; this is fixed in the code (`spearman`), but the table has not been recomputed. On 9 dev photos the fix moved the averages by at most 0.09 (single images by up to 0.37). In the "last block" row, one of the 25 images has a constant map and is left out.
+
 A map that ignored the model would stay near +1. They drop to the level of unrelated maps, so the explanations do depend on the learned weights. The one caution: for the predicted grade, randomising only the last layer still leaves a weak +0.25.
 
 ## IDRiD validation
@@ -40,25 +42,25 @@ Data: the 81 IDRiD segmentation images, masks for microaneurysms (MA), haemorrha
 
 | Heatmap | hottest pixel on a lesion | share of heat on lesions | precision in the hottest 10% | lesions inside the hottest 20% | enrichment in the hottest 10% |
 |---|---|---|---|---|---|
-| **Grad-CAM, referral** | **0.32** | **0.138** | **0.163** | **0.585** | **4.1×** |
-| Grad-CAM, predicted grade | 0.26 | 0.085 | 0.125 | 0.380 | 2.5× |
-| Grad-CAM, randomised model | 0.03 | 0.048 | 0.040 | 0.172 | 0.7× |
-| Baseline: retina centre | 0.11 | 0.070 | 0.077 | 0.298 | 1.6× |
-| Baseline: optic disc | 0.00 | 0.023 | 0.011 | 0.076 | 0.2× |
-| Baseline: random | 0.05 | 0.046 | 0.046 | 0.200 | 1.0× |
+| **Grad-CAM, referral** | **0.32** | **0.140** | **0.166** | **0.573** | **4.0×** |
+| Grad-CAM, predicted grade | 0.26 | 0.087 | 0.128 | 0.369 | 2.4× |
+| Grad-CAM, randomised model | 0.03 | 0.049 | 0.040 | 0.162 | 0.7× |
+| Baseline: retina centre | 0.11 | 0.070 | 0.077 | 0.285 | 1.5× |
+| Baseline: optic disc | 0.00 | 0.023 | 0.010 | 0.073 | 0.2× |
+| Baseline: random | 0.05 | 0.048 | 0.048 | 0.200 | 1.0× |
 
-Grad-CAM (referral) minus each baseline, with 95% CIs from a paired bootstrap over images: random +0.28 [+0.18, +0.38] on the pointing game, retina centre +0.21 [+0.10, +0.33], optic disc +0.32 [+0.22, +0.42], randomised model +0.30 [+0.20, +0.40]. Every CI excludes 0.
+Grad-CAM (referral) minus each baseline, with 95% CIs from a paired bootstrap over images: random +0.27 [+0.18, +0.37] on the pointing game, retina centre +0.21 [+0.09, +0.33], optic disc +0.32 [+0.22, +0.42], randomised model +0.30 [+0.20, +0.40]. Every CI excludes 0.
 
-With a 16-pixel tolerance (one Grad-CAM cell is 32 px; lesions then cover 45% of the retina) the same order holds: Grad-CAM referral 0.96 pointing / 2.0× enrichment, random 0.45 / 1.0×. The strict table is the honest headline, because the tolerant one is easy to score well on.
+With a 16-pixel tolerance (one Grad-CAM cell is 32 px; lesions then cover 47% of the retina) Grad-CAM referral is still first: 0.96 pointing / 2.0× enrichment, random 0.47 / 1.0×. The strict table is the honest headline, because the tolerant one is easy to score well on.
 
-**By lesion type** (share of the lesion pixels inside the hottest 20%): hard exudates 0.66, soft exudates 0.62, haemorrhages 0.48, **microaneurysms 0.36**. **By lesion load:** hit rate 0.22 (few lesions), 0.30, 0.44 (many lesions); enrichment is similar in all three groups.
+**By lesion type** (share of the lesion pixels inside the hottest 20%): hard exudates 0.64, soft exudates 0.61, haemorrhages 0.46, **microaneurysms 0.35**. **By lesion load:** hit rate 0.19 (few lesions), 0.37, 0.41 (many lesions); enrichment 4.2×, 4.4×, 3.3×.
 
 ## Honest conclusion
 - The referral heatmap is **meaningfully linked to lesions**: far better than chance, than a centre bias, than the optic disc and than a randomised model. It works best on exudates.
 - It is **not a precise detector.** Two images in three still have their hottest pixel off every marked lesion (strict). Microaneurysms are mostly missed: they are 1–3 pixels at this resolution and the heatmap grid is 12×12.
 - The map for the **predicted grade is weaker and noisier** (hottest pixel on a lesion in 26%). In the EyePACS dev gallery some predicted-grade maps light up the image border or the optic disc, so **part of the attention is not on lesions**. This is the main risk to state.
 - IDRiD is one dataset, all images contain lesions, and the number of images is small.
-- **The retina mask used in the metrics is slightly too large** (found 2026-11-22): in some images CLAHE noise makes it spill into the black corners. From the stored sizes, it covers on average 75.8% of the square, against about 73% for a clean mask (roughly +4%; at most +14%). The chance level and the enrichment are therefore off by about that much (for example 4.1× could be nearer 3.9×); the order of the rows does not change. The numbers were not recomputed.
+- **Corrected on 2026-11-22:** the first version of the retina mask spilled into the black corners of some images (75.8% of the square on average). It was replaced and the whole job was run again (`rg-gradcam`, code `8f15ccf`). The changes are small: enrichment 4.1× → 4.0×, chance level 4.6% → 4.8%, hottest pixel on a lesion unchanged at 32%. All numbers on this page are from the new run, except the sanity check (see its note).
 
 ## Failure analysis
 Looked at the 81 images and at the numbers (`src/evaluation/gradcam_idrid.py`, plus the private galleries).

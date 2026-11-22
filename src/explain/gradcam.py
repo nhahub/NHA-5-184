@@ -86,9 +86,15 @@ def overlay(image_0_255: np.ndarray, heatmap: np.ndarray, alpha: float = 0.4) ->
     return out
 
 
+def _ranks(v: np.ndarray) -> np.ndarray:
+    _, inverse, counts = np.unique(v.ravel(), return_inverse=True, return_counts=True)
+    return (np.cumsum(counts) - (counts - 1) / 2.0)[inverse.ravel()]
+
+
 def spearman(a: np.ndarray, b: np.ndarray) -> float:
-    ra = np.argsort(np.argsort(a.ravel())).astype(np.float64)
-    rb = np.argsort(np.argsort(b.ravel())).astype(np.float64)
+    """Rank correlation. Equal values share their average rank: heatmaps hold many zeros (ReLU), and ranking those
+    by position would add a correlation that is not there."""
+    ra, rb = _ranks(a), _ranks(b)
     ra -= ra.mean()
     rb -= rb.mean()
     return float((ra * rb).sum() / np.sqrt((ra ** 2).sum() * (rb ** 2).sum()))

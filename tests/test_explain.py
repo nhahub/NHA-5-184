@@ -118,3 +118,12 @@ def test_heat_is_not_painted_on_background_noise(scene, gain):
     outside = ~L.dilate(retina, 4)
     o = G.overlay(x, np.ones((S, S), np.float32))
     assert (o[outside] == x[outside].astype(np.uint8)).all()
+
+
+def test_spearman_gives_equal_values_the_same_rank():
+    assert G._ranks(np.array([0.0, 5, 0, 7])).tolist() == [1.5, 3, 1.5, 4]
+    a, b = np.zeros(1000), np.zeros(1000)                        # two maps that are hot in different places
+    a[100], b[900] = 1, 1
+    assert abs(G.spearman(a, b)) < 0.01                          # ranking the zeros by position gave about +1
+    x = np.random.default_rng(0).random(500)
+    assert G.spearman(x, x ** 3) == pytest.approx(1) and G.spearman(x, -x) == pytest.approx(-1)

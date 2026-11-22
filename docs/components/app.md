@@ -16,26 +16,28 @@ set RG_MODEL=C:\path\B_full_s42_384_mix_model.keras          # grading model (81
 set RG_QUALITY_MODEL=C:\path\quality_b0_224.keras            # quality gate (17 MB)
 streamlit run app/streamlit_app.py
 ```
-The server listens on **localhost only** (`.streamlit/config.toml`), so other devices cannot reach it, and it sends no usage statistics. Open http://localhost:8501. If the quality model is missing the app still works but says clearly that image quality was *not* checked; if the grading model is missing it shows an error naming `RG_MODEL`.
+Start it **from the project folder**: the server then listens on **localhost only** (`.streamlit/config.toml`), so other devices cannot reach it. Started from elsewhere, the page refuses to work unless `--server.address localhost` (or, for a deliberate deployment, `RG_ALLOW_NETWORK=1`) is given. It is not published anywhere, and it sends no usage statistics. Open http://localhost:8501. If the quality model is missing the app still works but says clearly that image quality was *not* checked; if the grading model is missing it shows an error naming `RG_MODEL`.
 
 ## What the page shows
-1. **Upload**: PNG or JPG up to 25 MB. Corrupt files, non-images, files under 64 pixels and over 25 MB give a message instead of a crash.
+1. **Upload**: PNG or JPG up to 25 MB. Corrupt files, non-images, empty files, files under 64 pixels, over 25 MB or over 60 megapixels give a message instead of a crash.
 2. **Quality**: Good (continue), Usable (continue with a warning and a review notice) or Reject (a new photo is requested and *no grade is shown*).
 3. **Result**: grade 0–4 with its name, class probabilities, calibrated confidence, the flags "Referable DR" (grade ≥ 2) and "Sight-threatening DR" (grade ≥ 3), and the *needs human review* notice with its reasons.
 4. **Heatmap**: Grad-CAM for the predicted grade or the referral decision (a toggle). It is coarse and does not outline lesions.
-5. **All output values**: the full JSON, for debugging.
+
+The technical JSON is not shown on the page; `RetinoPipeline().predict(...)` returns it.
 
 ## Evidence
-- Headless tests of the page with the real models, `tests/test_app.py` (7 tests, TensorFlow environment): waiting message, a photo produces grade/flags/confidence/disclaimer, the heatmap toggle, bad/tiny/oversized files explained, and a photo rejected by the real gate shows no grade.
+- Headless tests of the page with the real models, `tests/test_app.py` (15 tests, TensorFlow environment): waiting message, a photo produces grade/flags/confidence/disclaimer, the heatmap toggle, bad/empty/tiny/oversized files explained, a photo rejected by the real gate shows no grade, the probability chart's order and axis, no internal details on the page, and the network guard.
+- Real-browser check (Edge, 2026-11-22, real upload button and real models): 9 of 9 EyePACS dev photos gave the expected quality message, grade, confidence, flags and review notice, and 10 of 10 problem files (text renamed to png, empty, tiny, huge, half a file, black, blurred, dark, Arabic file name, a landscape) gave the right message or grade with no crash.
 - A server start check: the health endpoint answers 200.
-- First use by a person in a browser (2026-11-22, one real photo without a known grade): quality message, grade, flags and both heatmaps worked. It showed one display bug, now fixed: heat was painted as speckles on the black background (`retina_mask` in `src/explain/lesion_overlap.py`). The referral heatmap is now the default, because it is the more reliable one. On 9 EyePACS dev photos (grades 0-4, one Usable, one Reject) the local pipeline gives the same grade as the stored predictions on 9 of 9 (largest probability difference 0.005) and the expected flags, review and quality messages. The Usable and Reject messages have not been seen by a person in the browser yet. No photo of a patient is in the repository.
+- First use by a person in a browser (2026-11-22, one real photo without a known grade): quality message, grade, flags and both heatmaps worked. It showed one display bug, now fixed: heat was painted as speckles on the black background (`retina_mask` in `src/explain/lesion_overlap.py`). The referral heatmap is now the default, because it is the more reliable one. On 9 EyePACS dev photos (grades 0-4, one Usable, one Reject) the local pipeline gives the same grade as the stored predictions on 9 of 9 (largest probability difference 0.005) and the expected flags, review and quality messages. No photo of a patient is in the repository.
 
 ## Why this design
 - **Streamlit** is the simplest tool the team can read and present, and it runs on a laptop CPU.
 - **The quality gate comes first** because the grading model is measurably unreliable on poor photos (see the quality component: far errors on Reject photos are about 4× those on Good photos).
 - **No grade for a rejected photo**: showing a number for an image the system calls ungradable invites misuse.
 - **Flags and grade use raw probabilities** (frozen and tested); the calibrated confidence is display only.
-- **Localhost by default**, no data stored: photos live in memory for the session.
+- **Localhost by default**, no data stored: nothing is written to disk. The caches are small and their entries expire after 10 minutes; stopping the server clears everything.
 
 ## Limits
 - One photo at a time, no user accounts, no storage.

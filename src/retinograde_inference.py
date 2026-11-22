@@ -57,16 +57,20 @@ V1_THRESHOLD = 0.3          # threshold بتاع Stage 1 (اتختار من جد
 def load_rgb(source):
     """source = مسار ملف | bytes | ملف مرفوع (Streamlit UploadedFile) | numpy RGB uint8"""
     if isinstance(source, (str, os.PathLike)):
-        img = cv2.imread(str(source))
-        if img is None:
-            raise ValueError(f"Cannot read the image: {source}")
-        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        try:                                             # not cv2.imread: on Windows it cannot open Arabic file names
+            with open(source, "rb") as f:
+                return load_rgb(f.read())
+        except (OSError, ValueError) as e:
+            raise ValueError(f"Cannot read the image: {source}") from e
     if isinstance(source, (bytes, bytearray)):
-        img = cv2.imdecode(np.frombuffer(source, np.uint8), cv2.IMREAD_COLOR)
+        # an empty buffer would raise cv2.error instead of returning None
+        img = cv2.imdecode(np.frombuffer(source, np.uint8), cv2.IMREAD_COLOR) if len(source) else None
         if img is None:
             raise ValueError("The file is not a valid image")
         return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     if hasattr(source, "read"):
+        if hasattr(source, "seek"):
+            source.seek(0)                               # the stream may have been read before
         return load_rgb(source.read())
     arr = np.asarray(source)
     if arr.ndim == 3 and arr.shape[2] == 3 and arr.dtype == np.uint8:
@@ -216,9 +220,16 @@ def v1_result(p1, p2, threshold=V1_THRESHOLD):
     }
 
 
+def default_path(relative):
+    """A default model path: relative to the current folder, else to the project folder (so any start folder works)."""
+    if os.path.isfile(relative):
+        return relative
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), relative)
+
+
 def resolve_model_path(model_path=None):
     """Explicit argument > environment variable RG_MODEL > DEFAULT_MODEL_PATH."""
-    path = str(model_path or os.environ.get(MODEL_ENV) or DEFAULT_MODEL_PATH)
+    path = str(model_path or os.environ.get(MODEL_ENV) or default_path(DEFAULT_MODEL_PATH))
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Model file not found: {path}. Pass model_path or set {MODEL_ENV} (see models/README.md).")
     return path

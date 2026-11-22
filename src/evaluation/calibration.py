@@ -24,7 +24,6 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from evaluation import metrics as M  # noqa: E402
 from evaluation.operating_points import load_oof  # noqa: E402
 
 EPS = 1e-8
