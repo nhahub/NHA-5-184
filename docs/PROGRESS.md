@@ -7,7 +7,7 @@ Status values: **Done and verified · Built but unverified · In progress · Blo
 | # | Item | Status | Evidence | What remains | Needed from the team |
 |---|---|---|---|---|---|
 | 0 | Model v2 (frozen, one-shot test) | Done and verified | `docs/v2_model_report.md`, `docs/test_results.md` | – | – |
-| 1 | Inference on v2 at 384px | Done and verified | `rg-infer-check`: 120/120 images bit-exact with training, 299/300 grades and 300/300 flags equal to the stored predictions; 164–214 ms per image on CPU; `tests/test_inference_v2.py` (19 pass) · [component](components/inference.md) | Local run of `tests/test_real_model_v2.py` on the laptop (TensorFlow environment being set up) | Review and merge the PR |
+| 1 | Inference on v2 at 384px | Done and verified | `rg-infer-check`: 120/120 images bit-exact with training, 299/300 grades and 300/300 flags equal to the stored predictions; 164–214 ms per image on CPU; `tests/test_inference_v2.py` + `tests/test_real_model_v2.py` (23 pass, real model on the laptop) · [component](components/inference.md) | – | Review and merge the PR |
 | 2 | Grad-CAM on v2 + IDRiD lesion validation | In progress | code in `src/explain/`, job `rg-gradcam` | run on the real model, report | IDRiD rules page check before any image is published |
 | 3 | Image-quality gate (EyeQ) | In progress | filename mapping: 12,543/12,543 names match and the DR grade agrees in 100% | picture-level check in the hi-res mirror, training, evaluation, integration | – |
 | 4 | Confidence calibration + "needs human review" | Not started | | | choose the operating points |
