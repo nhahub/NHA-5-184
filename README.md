@@ -70,7 +70,7 @@ cd Diabetic-Retinopathy-Project
 python -m venv .venv
 # Windows: .venv\Scripts\activate      Linux/macOS: source .venv/bin/activate
 pip install -r requirements-local.txt
-python -m pytest              # 90 tests, all synthetic data (tests that need TensorFlow and a model file are skipped)
+python -m pytest              # 78 tests, all synthetic data (11 more run where TensorFlow and the model files are present)
 ```
 
 Training and evaluation run on **Kaggle** (private jobs), not on a laptop. See [`kaggle/README.md`](kaggle/README.md). `requirements.txt` pins the Kaggle environment (TensorFlow 2.21.0 / Keras 3.13.2), which the saved models need.
