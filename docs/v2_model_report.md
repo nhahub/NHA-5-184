@@ -25,9 +25,9 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 ### Phase 2 — choosing the model (5-fold cross-validation, never the test set)
 | Experiment | Result | Decision |
 |---|---|---|
-| A = cascade retrained · B = single 5-class softmax · C = ordinal regression | QWK: A 0.898 · B 0.895 ± 0.002 · C 0.904 ± 0.003 (3 seeds) | Within noise. |
+| A = cascade retrained · B = single 5-class softmax · C = ordinal regression | QWK: A 0.898 (**1 seed only**) · B 0.895 ± 0.002 (3 seeds) · C 0.904 ± 0.003 (3 seeds) | Within noise. |
 | B vs C at the **same specificity** | B is as good or better (referable AUC 0.981 vs 0.976). C's apparent sensitivity gain came only from a looser threshold. | **B chosen.** |
-| B vs A for "any DR" | AUC 0.997 for both. | Cascade not needed. |
+| B vs A for "any DR" | AUC 0.997 for both (seed 42; A has one seed). | Cascade not needed: no measured gain, and it needs two models. |
 | Test-time augmentation and model averaging | +0.005 QWK or less (within noise), at 4–5× the cost. | Not adopted. |
 
 ### "Headroom check" — is there still room to improve?
@@ -42,7 +42,7 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 | Change | Evidence | Decision |
 |---|---|---|
 | **384px images** instead of 224px | QWK +0.016 [+0.009, +0.023] over 5 folds × 3 seeds; better in 13/15 runs. | Adopted. CPU time rises ~20%. |
-| **Train on APTOS + 8,000 EyePACS images** | EyePACS referable AUC **+0.117** [+0.095, +0.139] (0.78 → 0.90), confirmed on 3 seeds. APTOS QWK −0.010 (within the allowed −0.02). | Adopted. |
+| **Train on APTOS + 8,000 EyePACS images** | EyePACS referable AUC **+0.117** [+0.095, +0.139] (0.78 → 0.90), confirmed on 3 seeds × 2 of the 5 folds. APTOS QWK −0.010 (within the allowed −0.02). | Adopted. |
 
 ### Freeze and final model
 - **Final model:** trained once on all training data (APTOS 2,879 + 8,000 EyePACS) for 9 fine-tune epochs, the median best epoch of the cross-validation runs.
@@ -55,7 +55,7 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 
 ## 3. Final performance (Phase 3, one-shot test)
 
-| Test set (never used before) | QWK | Accuracy | Within 1 grade | Referable AUC | Sight-threat. AUC | Referable sens / spec | Sight-threat. sens / spec |
+| Test set (no v2 model trained on it or was tuned on it) | QWK | Accuracy | Within 1 grade | Referable AUC | Sight-threat. AUC | Referable sens / spec | Sight-threat. sens / spec |
 |---|---|---|---|---|---|---|---|
 | **APTOS 2019 held-out (733)** | **0.898** [0.872–0.922] | **83.8%** | 96.0% | 0.985 | 0.945 | 0.950 / 0.938 | 0.908 / 0.762 |
 | EyePACS test patients (3,428) | 0.669 [0.630–0.705] | 73.8% | 90.3% | 0.907 | 0.970 | 0.760 / 0.901 | 0.943 / 0.888 |
@@ -78,6 +78,8 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 - **Trustworthy numbers:** the test results match the cross-validation predictions.
 
 **Limitations (state these honestly):**
+- **The APTOS test set is not fully independent of v1:** the 733 images were v1's validation set, so v1's epochs and threshold were chosen on them. No v2 model trained on them, and no v2 epoch, threshold or model choice used them. But v2 started from some v1 settings (such as learning rates, dropout and class weighting), so its APTOS score may be slightly optimistic. v1's score on them is optimistic too. EyePACS test patients and IDRiD are free of this.
+- **Seeds:** the cascade (A), the learning curve and the final model are single-seed. Mixed training was checked with 3 seeds on 2 of 5 folds, to stay within the GPU budget.
 - **Exact grade is hard:** IDRiD accuracy is 51%; the model often grades one level lower than IDRiD's graders. Grade 1 and grade 3 recall are low.
 - **Over-referral:** the sight-threatening alarm was tuned on EyePACS. On APTOS and IDRiD it over-refers (specificity 0.70–0.76).
 - **Label noise:** APTOS has label noise (28 of 98 duplicate pairs disagree), which caps achievable accuracy.
@@ -92,7 +94,7 @@ Commit IDs quoted here refer to the development history (tag `v2-dev-history` in
 - `src/data/aptos_v2.py` (v2 data, augmentation, `StackedArrays`, `RG_DATA_ROOTS`) and `src/model_io.py` (safe model loading).
 - `src/evaluation/`: metrics, report, and one script per experiment, each runnable on CPU from the saved predictions.
 - `src/explain/gradcam.py`: Grad-CAM for model B (written; not yet run on the final model).
-- `kaggle/`: job helper and 15 private Kaggle job scripts (data build, training, scoring, test).
+- `kaggle/`: job helper and 11 private Kaggle job scripts (data build, training, scoring, test).
 - `notebooks/colab_final_model.ipynb`: how the final model was trained on Colab.
 - `docs/`: `experiments.md` (every run and decision), `test_results.md`, `frozen_config.json`, this report.
 - `tests/`: 30 local tests (`pytest`), all passing.
