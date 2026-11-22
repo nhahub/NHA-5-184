@@ -24,12 +24,12 @@ Grad-CAM was computed on 25 EyePACS **dev** images (5 per true grade; images the
 
 | Randomised | predicted grade | referral |
 |---|---|---|
-| dense head only | +0.25 | −0.22 |
-| dense head + last block | +0.06 | +0.10 |
-| all layers | +0.07 | −0.02 |
-| *(reference: maps of two different images)* | +0.08 | +0.08 |
+| dense head only | +0.25 | −0.21 |
+| dense head + last block | +0.07 | +0.11 |
+| all layers | +0.08 | +0.00 |
+| *(reference: maps of two different images)* | +0.07 | +0.07 |
 
-*Note (2026-11-22):* these numbers come from a rank correlation that ranked tied zeros by position; this is fixed in the code (`spearman`), but the table has not been recomputed. On 9 dev photos the fix moved the averages by at most 0.09 (single images by up to 0.37). In the "last block" row, one of the 25 images has a constant map and is left out.
+*Note (2026-11-22):* the first version of this table ranked tied zeros by position in the rank correlation. That was fixed (`spearman`) and the job was run again (`rg-gradcam`, code `1e2ecd8`); the averages moved by at most 0.02, so the conclusion is the same. In the "last block" row, one of the 25 images has a constant map and is left out, for both targets.
 
 A map that ignored the model would stay near +1. They drop to the level of unrelated maps, so the explanations do depend on the learned weights. The one caution: for the predicted grade, randomising only the last layer still leaves a weak +0.25.
 
@@ -60,7 +60,7 @@ With a 16-pixel tolerance (one Grad-CAM cell is 32 px; lesions then cover 47% of
 - It is **not a precise detector.** Two images in three still have their hottest pixel off every marked lesion (strict). Microaneurysms are mostly missed: they are 1–3 pixels at this resolution and the heatmap grid is 12×12.
 - The map for the **predicted grade is weaker and noisier** (hottest pixel on a lesion in 26%). In the EyePACS dev gallery some predicted-grade maps light up the image border or the optic disc, so **part of the attention is not on lesions**. This is the main risk to state.
 - IDRiD is one dataset, all images contain lesions, and the number of images is small.
-- **Corrected on 2026-11-22:** the first version of the retina mask spilled into the black corners of some images (75.8% of the square on average). It was replaced and the whole job was run again (`rg-gradcam`, code `8f15ccf`). The changes are small: enrichment 4.1× → 4.0×, chance level 4.6% → 4.8%, hottest pixel on a lesion unchanged at 32%. All numbers on this page are from the new run, except the sanity check (see its note).
+- **Corrected on 2026-11-22:** the first version of the retina mask spilled into the black corners of some images (75.8% of the square on average). It was replaced and the whole job was run again (`rg-gradcam`, code `8f15ccf`). The changes are small: enrichment 4.1× → 4.0×, chance level 4.6% → 4.8%, hottest pixel on a lesion unchanged at 32%. A second rerun (code `1e2ecd8`, for the sanity check) reproduced all IDRiD numbers exactly.
 
 ## Failure analysis
 Looked at the 81 images and at the numbers (`src/evaluation/gradcam_idrid.py`, plus the private galleries).
