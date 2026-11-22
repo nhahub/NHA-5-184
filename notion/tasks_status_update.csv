@@ -2,9 +2,9 @@ ID,Task,New status,Evidence
 T01,"Dataset Collection, EDA and Quality",Done,No change (already Done on the board)
 T02,Dataset Splitting,Done,v2 split: 733 test + 5 folds grouped by duplicates (docs/experiments.md)
 T03,Image Preprocessing & Augmentation,Done,preprocess_rgb at 384px is bit-exact between training and inference (120/120 images)
-T04,Quality Assessment Dataset Preparation,In progress,EyeQ names match the EyePACS mirror 12543/12543 and DR grades agree 100%
-T05,Quality Assessment Model,Not started,
-T06,Quality Model Evaluation,Not started,
+T04,Quality Assessment Dataset Preparation,Done,EyeQ labels verified against the EyePACS mirror: 11297 names and DR grades and 600/600 pictures
+T05,Quality Assessment Model,Done,EfficientNetB0 224px quality gate (3 seeds) in a private Kaggle job; GPU about 0.5 h
+T06,Quality Model Evaluation,Done,Dev patients: accuracy 0.942 macro-F1 0.906; grading far errors 24% on Reject vs 6% on Good (docs/components/quality_gate.md)
 T07,DR Classification Model,Done,Model v2: EfficientNetB0 5 classes 384px (docs/v2_model_report.md)
 T08,Imbalance Handling,Done,v2 trains with class weights (power 0.5); the v1 comparison of power 1.0 vs 0.5 showed no meaningful difference
 T09,Model Training,Done,Final model trained on APTOS + 8000 EyePACS images (notebooks/colab_final_model.ipynb)
