@@ -28,7 +28,7 @@ The server listens on **localhost only** (`.streamlit/config.toml`), so other de
 ## Evidence
 - Headless tests of the page with the real models, `tests/test_app.py` (7 tests, TensorFlow environment): waiting message, a photo produces grade/flags/confidence/disclaimer, the heatmap toggle, bad/tiny/oversized files explained, and a photo rejected by the real gate shows no grade.
 - A server start check: the health endpoint answers 200.
-- First use by a person in a browser (2026-11-22, one real photo without a known grade): quality message, grade, flags and both heatmaps worked. It showed one display bug, now fixed: heat was painted as speckles on the black background (`display_mask` in `src/explain/gradcam.py`). Reject, warning and wrong-file paths have only been tried by the automatic tests. No photo of a patient is in the repository.
+- First use by a person in a browser (2026-11-22, one real photo without a known grade): quality message, grade, flags and both heatmaps worked. It showed one display bug, now fixed: heat was painted as speckles on the black background (`retina_mask` in `src/explain/lesion_overlap.py`). The referral heatmap is now the default, because it is the more reliable one. On 9 EyePACS dev photos (grades 0-4, one Usable, one Reject) the local pipeline gives the same grade as the stored predictions on 9 of 9 (largest probability difference 0.005) and the expected flags, review and quality messages. The Usable and Reject messages have not been seen by a person in the browser yet. No photo of a patient is in the repository.
 
 ## Why this design
 - **Streamlit** is the simplest tool the team can read and present, and it runs on a laptop CPU.

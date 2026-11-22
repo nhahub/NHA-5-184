@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from explain.lesion_overlap import retina_mask
+
 LAST_CONV = "top_activation"
 
 
@@ -72,28 +74,6 @@ def gradcam(model, image_0_255: np.ndarray, target="pred", feature_model=None):
     return cam.astype(np.float32), probs.numpy()[0], target
 
 
-def display_mask(image_0_255: np.ndarray) -> np.ndarray:
-    """(S, S, 3) prepared image -> bool mask of the retina, used for DRAWING only (the IDRiD metrics have their own mask).
-
-    A fixed low threshold is not enough: CLAHE lifts the noise of the black background above it, and the heatmap was
-    then painted as speckles outside the eye. So: median filter, a threshold between the darkest corner and the
-    image centre (dark photos keep their retina), and only the largest region, with its holes filled."""
-    import cv2
-    v = np.clip(np.asarray(image_0_255, np.float32), 0, 255).astype(np.uint8).max(axis=2)
-    S = v.shape[0]
-    v7, c = cv2.medianBlur(v, 7), S // 16
-    dark = min(float(np.median(p)) for p in (v7[:c, :c], v7[:c, -c:], v7[-c:, :c], v7[-c:, -c:]))     # darkest corner
-    centre = float(np.median(v7[S // 4:S - S // 4, S // 4:S - S // 4]))
-    level = max(12.0, dark + 0.15 * (centre - dark))
-    m = (v7 > level).astype(np.uint8)
-    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
-    cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    out = np.zeros(v.shape, np.uint8)
-    if cs:
-        cv2.drawContours(out, [max(cs, key=cv2.contourArea)], -1, 1, -1)
-    return out.astype(bool)
-
-
 def overlay(image_0_255: np.ndarray, heatmap: np.ndarray, alpha: float = 0.4) -> np.ndarray:
     """RGB uint8 image with the heatmap (jet colours) blended on top; background stays dark."""
     import cv2
@@ -101,7 +81,7 @@ def overlay(image_0_255: np.ndarray, heatmap: np.ndarray, alpha: float = 0.4) ->
     heat = cv2.applyColorMap(np.uint8(255 * np.clip(heatmap, 0, 1)), cv2.COLORMAP_JET)
     heat = cv2.cvtColor(heat, cv2.COLOR_BGR2RGB)
     out = cv2.addWeighted(img, 1 - alpha, heat, alpha, 0)
-    retina = display_mask(img)                                   # keep the black background black
+    retina = retina_mask(img)                                    # keep the black background black
     out[~retina] = img[~retina]
     return out
 

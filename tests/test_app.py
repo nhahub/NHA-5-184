@@ -63,7 +63,8 @@ def test_photo_gives_grade_flags_probabilities_and_disclaimer():
 
 def test_heatmap_toggle_does_not_crash():
     at = run(png(fundus(h=900, w=1200, seed=3)))
-    at.radio[0].set_value("Referral decision (grade ≥ 2)").run()
+    assert at.radio[0].value == "Referral decision (grade ≥ 2)"      # the more reliable map is the default
+    at.radio[0].set_value("Predicted grade").run()
     assert not at.exception
 
 

@@ -113,7 +113,7 @@ def test_heat_is_not_painted_on_background_noise(scene, gain):
     retina, _ = scene
     x = np.random.default_rng(0).integers(0, 20, (S, S, 3)).astype(np.float32)
     x[retina] = np.array([200.0, 110.0, 40.0]) * gain
-    m = G.display_mask(x)
+    m = L.retina_mask(x)
     assert m[~retina].mean() < 0.02 and m[retina].mean() > 0.97
     outside = ~L.dilate(retina, 4)
     o = G.overlay(x, np.ones((S, S), np.float32))

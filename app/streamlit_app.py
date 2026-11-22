@@ -135,7 +135,8 @@ st.subheader("Class probabilities")
 st.bar_chart({"probability": {n: result["probabilities"][n] for n in R.CLASS_NAMES}}, horizontal=True)
 
 st.subheader("Where did the model look? (Grad-CAM)")
-choice = st.radio("Explain", ["Predicted grade", "Referral decision (grade ≥ 2)"], horizontal=True)
+choice = st.radio("Explain", ["Referral decision (grade ≥ 2)", "Predicted grade"], horizontal=True,
+                  help="The referral map is the default: on IDRiD it pointed at real lesions more often than the predicted-grade map.")
 with st.spinner("Computing the heatmap..."):
     x, h, used = heatmap(data, "pred" if choice == "Predicted grade" else "referable")
 h1, h2 = st.columns(2)

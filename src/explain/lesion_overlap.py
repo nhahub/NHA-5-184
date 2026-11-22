@@ -24,15 +24,25 @@ import numpy as np
 
 TYPES = ("MA", "HE", "EX", "SE")            # microaneurysms, haemorrhages, hard / soft exudates
 KS = (5, 10, 20)
-BACKGROUND_MAX = 12.0                       # max channel of the black background after CLAHE (~4), in 0..255
+BACKGROUND_MAX = 12.0                       # lowest threshold retina_mask may use (max channel, 0..255)
 
 
 def retina_mask(image_0_255: np.ndarray) -> np.ndarray:
-    """(S,S,3) model input -> bool mask of the retina (largest non-dark region, holes filled)."""
-    m = (np.asarray(image_0_255).max(axis=2) > BACKGROUND_MAX).astype(np.uint8)
-    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
+    """(S, S, 3) model input -> bool mask of the retina (used for the metrics and for drawing the heatmap).
+
+    A fixed low threshold is not enough: CLAHE can lift the noise of the black background above it, and the mask then
+    spilled into the corners (up to the whole photo rectangle). So: median filter, a threshold between the darkest corner
+    and the image centre (dark photos keep their retina), and only the largest region, with its holes filled."""
+    v = np.clip(np.asarray(image_0_255, np.float32), 0, 255).astype(np.uint8).max(axis=2)
+    S = v.shape[0]
+    v7, c = cv2.medianBlur(v, 7), S // 16
+    dark = min(float(np.median(p)) for p in (v7[:c, :c], v7[:c, -c:], v7[-c:, :c], v7[-c:, -c:]))     # darkest corner
+    centre = float(np.median(v7[S // 4:S - S // 4, S // 4:S - S // 4]))
+    level = max(BACKGROUND_MAX, dark + 0.15 * (centre - dark))
+    m = (v7 > level).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
     cs, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    out = np.zeros(m.shape, np.uint8)
+    out = np.zeros(v.shape, np.uint8)
     if cs:
         cv2.drawContours(out, [max(cs, key=cv2.contourArea)], -1, 1, -1)
     return out.astype(bool)
