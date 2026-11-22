@@ -38,7 +38,7 @@ FINAL_MODEL = f"{USER}/rg-final-model"                                # frozen v
 IDRID = "aaryapatel98/indian-diabetic-retinopathy-image-dataset"   # official layout incl. lesion masks
 
 # Only these (small) files are ever downloaded from kernel outputs.
-SMALL_OUTPUTS = r".*(run\.json|latency\.json|eyepacs_dev_preds\.npz|eyepacs_dev_scores\.npz|final_test_preds\.npz|oof_preds\.npz|test_preds\.npz|v1_repro\.json|val_probs_v1\.npz|recon\.json|_summary\.json|\.csv|pip_freeze\.txt|\.md|\.log)$"
+SMALL_OUTPUTS = r".*(run\.json|latency\.json|eyepacs_dev_preds\.npz|eyepacs_dev_scores\.npz|final_test_preds\.npz|oof_preds\.npz|test_preds\.npz|qval_preds\.npz|qtest_preds\.npz|v1_repro\.json|val_probs_v1\.npz|recon\.json|_summary\.json|\.csv|pip_freeze\.txt|\.md|\.log)$"
 
 SPECS = {
     "rg-recon": dict(script="rg_recon.py", gpu=False, internet=True,
@@ -73,6 +73,14 @@ SPECS = {
     # same one-shot test on CPU (used when the GPU queue is stuck; ~1.5 h)
     "rg-final-test-cpu": dict(script="rg_final_test.py", gpu=False, internet=False, datasets=[CODE_DS, EYEPACS_HIRES],
                               kernels=[f"{USER}/rg-data-v2-384", f"{USER}/rg-eyepacs-dev", f"{USER}/rg-recon"]),
+    # EyeQ quality labels: are they attached to the right pictures in the hi-res mirror? (CPU; no test patients)
+    "rg-eyeq-verify": dict(script="rg_eyeq_verify.py", gpu=False, internet=False, datasets=[EYEPACS, EYEPACS_HIRES],
+                           kernels=[f"{USER}/rg-recon"]),
+    # image-quality gate: arrays (CPU; no test patients) and training (GPU, 3 seeds)
+    "rg-quality-data": dict(script="rg_quality_data.py", gpu=False, internet=False, datasets=[CODE_DS, EYEPACS_HIRES],
+                            kernels=[f"{USER}/rg-recon"]),
+    "rg-quality-train": dict(script="rg_quality_train.py", gpu=True, internet=True, datasets=[CODE_DS],
+                             kernels=[f"{USER}/rg-quality-data"]),
     # Grad-CAM on the real v2 model (EyePACS dev gallery, sanity checks) + IDRiD lesion validation (CPU)
     "rg-gradcam": dict(script="rg_gradcam.py", gpu=False, internet=False,
                        datasets=[CODE_DS, EYEPACS_HIRES, IDRID, FINAL_MODEL]),
