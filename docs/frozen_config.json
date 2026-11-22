@@ -1,0 +1,29 @@
+{
+  "name": "B384-mix-v2",
+  "frozen_on": "2026-11-21",
+  "model": "EfficientNetB0 5-class softmax (candidate B), 384x384, frozen preprocess_rgb contract",
+  "training_data": "APTOS v2 train pool (2,879) + 8,000 EyePACS 'rest' images (class-stratified)",
+  "primary": "B_full_s42_384_mix",
+  "primary_ft_epochs": 9,
+  "ensemble": [
+    "B_f0_s42_384_mix",
+    "B_f1_s42_384_mix",
+    "B_f2_s42_384_mix",
+    "B_f3_s42_384_mix",
+    "B_f4_s42_384_mix"
+  ],
+  "grade_rule": "argmax of the 5 class probabilities",
+  "thresholds": {
+    "referable": 0.3269,
+    "sight_threatening": 0.0277
+  },
+  "threshold_rule": "set on B_full_s42_384_mix EyePACS-dev predictions at specificity {'referable': 0.9, 'sight_threatening': 0.9}",
+  "tta": false,
+  "test_sets": [
+    "APTOS held-out 733",
+    "IDRiD grading 516",
+    "EyePACS test patients (1,714 / 3,428)"
+  ],
+  "primary_trained_on": "Google Colab T4, TF 2.21.0 / Keras 3.13.2 (same versions as Kaggle), code 7d93e26, 41 min; Kaggle T4 queue was stuck for 5 h. Model file in private Kaggle dataset omarashour206/rg-final-model",
+  "test_authorised_by": "user, 2026-11-20 ('do everything to make it the best, stop after the test evaluation')"
+}

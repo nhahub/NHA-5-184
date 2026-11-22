@@ -1,0 +1,8 @@
+# Local (orchestration-only) environment: Python 3.14, NO TensorFlow.
+# Models are trained/evaluated on Kaggle (see kaggle/README.md); requirements.txt pins the Kaggle env.
+kaggle>=2.2
+numpy>=2.3
+pandas>=2.3
+scikit-learn>=1.7
+opencv-python-headless>=4.12
+pytest>=8.4
