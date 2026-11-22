@@ -19,15 +19,16 @@ Step 3–4 are done (model v2 below). Steps 1–2 (quality gate on EyeQ) and 5 (
 
 ## Current model (v2, frozen 2026-11-21)
 
-One **EfficientNetB0** with a 5-class softmax, **384×384** input, trained on **APTOS 2019 + 8,000 EyePACS** images. Each test set below was scored **once**, after the settings were frozen:
+One **EfficientNetB0** with a 5-class softmax, **384×384** input, trained on **APTOS 2019 + 8,000 EyePACS** images. v2 was scored **once** on each test set below, after its settings were frozen:
 
-| Test set (never used for training or tuning) | QWK | Accuracy | Referable AUC | Sight-threatening AUC |
+| Test set (no v2 model trained on it or was tuned on it) | QWK | Accuracy | Referable AUC | Sight-threatening AUC |
 |---|---|---|---|---|
 | **APTOS 2019 held-out, 733 images** | **0.898** | **83.8%** | 0.985 | 0.945 |
 | EyePACS test patients, 3,428 images | 0.669 | 73.8% | 0.907 | 0.970 |
 | IDRiD (India), 516 images | 0.714 | 51.2% | 0.946 | 0.916 |
 
 The previous version (v1, a two-model cascade at 224px, now in [`archive/v1/`](archive/v1)) scored QWK 0.840 / 78.3% on the same 733 APTOS images. The improvement is **+0.058 QWK** [95% CI +0.034, +0.093].
+Caveat: the 733 APTOS images were v1's validation set, and v2 started from some v1 settings, so the APTOS score may be slightly optimistic. EyePACS test patients and IDRiD have no such link.
 Full report: [`docs/v2_model_report.md`](docs/v2_model_report.md) · all experiments: [`docs/experiments.md`](docs/experiments.md) · test tables: [`docs/test_results.md`](docs/test_results.md).
 
 ## Repository layout
@@ -39,7 +40,7 @@ src/                         ← model v2 pipeline
   training/train.py          trainer (5-class model, folds, seeds, 384px, APTOS + EyePACS, full-pool final model)
   training/predict.py        re-scoring saved models
   evaluation/                metrics (QWK, sensitivity/specificity, AUC, bootstrap CIs) + one script per experiment
-  explain/gradcam.py         Grad-CAM for the nested EfficientNet
+  explain/gradcam.py         Grad-CAM for the nested EfficientNet, lesion-overlap validation
   model_io.py                how to load trained models safely
 tests/                       local tests (no TensorFlow needed)
 kaggle/                      private Kaggle jobs: make_kernel.py + kernels/ (data build, training, scoring, final test)
@@ -69,7 +70,7 @@ cd Diabetic-Retinopathy-Project
 python -m venv .venv
 # Windows: .venv\Scripts\activate      Linux/macOS: source .venv/bin/activate
 pip install -r requirements-local.txt
-python -m pytest              # 30 tests, all synthetic data
+python -m pytest              # 84 tests, all synthetic data (19 more run where TensorFlow and the model files are present)
 ```
 
 Training and evaluation run on **Kaggle** (private jobs), not on a laptop. See [`kaggle/README.md`](kaggle/README.md). `requirements.txt` pins the Kaggle environment (TensorFlow 2.21.0 / Keras 3.13.2), which the saved models need.
@@ -80,6 +81,16 @@ Re-create the analysis tables from downloaded results (CPU, seconds):
 python src/evaluation/report.py --runs kaggle/runs          # results block in docs/experiments.md
 python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_test_preds.npz
 ```
+
+## Demo app (CPU)
+
+```bash
+pip install -r requirements-app.txt              # TensorFlow 2.21 + Streamlit (Python 3.11-3.13)
+set RG_MODEL=models\B_full_s42_384_mix_model.keras
+set RG_QUALITY_MODEL=models\quality_b0_224.keras
+streamlit run app/streamlit_app.py               # localhost only
+```
+Model files are not in the repository; [`models/README.md`](models/README.md) says where they are. Details: [`docs/components/app.md`](docs/components/app.md). Components: [inference](docs/components/inference.md) · [Grad-CAM](docs/components/gradcam.md) · [quality gate](docs/components/quality_gate.md) · [calibration & review](docs/components/calibration_review.md).
 
 ## Data and rules
 
@@ -92,12 +103,12 @@ python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_
 | Milestone | Status |
 |---|---|
 | M1 Data collection, preprocessing, EDA | done |
-| M2 DR severity model + evaluation | **done (v2 frozen, tested)** · image-quality model (EyeQ) not built yet |
-| M3 Grad-CAM + IDRiD validation, EyePACS generalization, Azure | Grad-CAM code written, not yet run on v2 · EyePACS done · Azure not started |
-| M4 MLflow, Streamlit, monitoring | not started |
+| M2 DR severity model + evaluation | **done (v2 frozen, tested)** · image-quality gate (EyeQ) done ([component](docs/components/quality_gate.md)) |
+| M3 Grad-CAM + IDRiD validation, EyePACS generalization, Azure | **done** (Grad-CAM + IDRiD on v2, [component](docs/components/gradcam.md)); EyePACS done · Azure not started |
+| M4 MLflow, Streamlit, monitoring | **Streamlit demo app done** (headless-tested) · MLflow, monitoring not started |
 | M5 Documentation and presentation | in progress |
 
-Note: `src/retinograde_inference.py` still loads the **v1** cascade. Switching it to the v2 model at 384px, with the same output keys, is the next step.
+Note: `src/retinograde_inference.py` runs model **v2** at 384px with the same output keys as v1 ([`docs/components/inference.md`](docs/components/inference.md)). Live status: [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Team
 

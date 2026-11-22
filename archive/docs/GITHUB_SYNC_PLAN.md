@@ -26,7 +26,7 @@ Remote file tree (17 files):
 | `Diabetic Retinopathy Project — Task Board.md` | 0.1 KB | Link to the Notion task board |
 | `Datasets/APTOS 2019 Blindness Detection Dataset.md` | 0.1 KB | Link to the Kaggle competition |
 | `Datasets/Diabetic Retinopathy 2015 Data Colored Resized.md` | 0.1 KB | Link to the EyePACS mirror |
-| `APSOT Dataset/APTOS Dataset Preparation and Image Preprocessing/dataset-preparation-and-image-preprocessing (1).ipynb` | 14.5 MB | Team notebook: APTOS preparation (1 image output) |
+| `APSOT Dataset/APTOS Dataset Preparation and Image Preprocessing/dataset-preparation-and-image-preprocessing (1).ipynb` | 14.5 MB | Team notebook: APTOS preparation (10 image outputs) |
 | `APSOT Dataset/Traning Models/one stage train/01…06_*.ipynb` (6 files) | 12–150 KB | Team notebooks: one-stage experiments (4 image outputs in total) |
 | `APSOT Dataset/Traning Models/tow stages train/stage 1/Binary classification (DR - NO DR).ipynb` | 16 KB | Team notebook: Stage 1 |
 | `APSOT Dataset/Traning Models/tow stages train/stage 1/Models/best_binary_dr_model (2).keras` | 17.1 MB | v1 Stage 1 model file (already public) |
@@ -80,7 +80,7 @@ None. No remote file is replaced by a file at a different path.
 | `.gitignore` gaps | `*.keras` outside `models/`, and a stray `credentials.json` / `access_token` in the repo. **Proposed:** add `*.keras`, `credentials.json`, `access_token`. Files already tracked on GitHub, such as the 17 MB v1 model, are not affected. |
 | v2 model file (81 MB) | **Not committed.** It stays in the private Kaggle dataset `rg-final-model`. Optional: attach it to a GitHub **Release** (D4). |
 
-**Pre-existing issue on GitHub (not caused by this sync):** the team notebooks contain 17 image outputs in total. Some may be sample fundus photos from APTOS / EyePACS, which those datasets' rules don't allow redistributing. The owners of those notebooks should check them and, if needed, clear the outputs in a separate PR. This plan does not touch them.
+**Pre-existing issue on GitHub (not caused by this sync):** the team notebooks contain 26 image outputs in total (an earlier version of this plan said 17, which was a miscount). Checked on 2026-11-22: 17 of them are grids of APTOS / EyePACS fundus photos and 9 are charts. Those datasets' rules don't allow redistributing the photos. The owners of those notebooks should check them and, if needed, clear the outputs in a separate PR. This plan does not touch them.
 
 ## 4. How the files get there: two options
 

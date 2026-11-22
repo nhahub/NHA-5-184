@@ -14,7 +14,7 @@ v1 = Stage 1 (DR yes/no) followed by Stage 2 (grade 1–4). On the 733 held-out 
 | `v1/scripts/eyepacs_prepare.py` | EyePACS → arrays with a patient-level split (team; only tested on synthetic data) | `kaggle/kernels/rg_eyepacs_data.py` |
 | `v1/scripts/eyepacs_pretrain_stage2.py` | EyePACS pretraining for Stage 2 (team; never run on real data) | mixed APTOS + EyePACS training (`extra_data="eyepacs"` in `train.py`) |
 
-The v1 *inference* code, `src/retinograde_inference.py`, is **not** archived. It is the app's inference API and still loads v1 until it is switched to v2 (next step).
+The inference code, `src/retinograde_inference.py`, is **not** archived. It runs model v2; the v1 cascade stays loadable there for comparison only (`RetinoGrade(version="v1", ...)`).
 
 ## `docs/`
 | Path | What it is |

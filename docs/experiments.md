@@ -200,6 +200,12 @@ Decision rule: adopt a change only if it beats the noise (about ±0.03 QWK, mean
   - **3-model average alone:** QWK −0.002 (n.s.); AUC ≥2 +0.001; AUC ≥3 +0.003.
   - **Both:** QWK +0.005 [−0.001, +0.010]; AUC ≥2 +0.002; AUC ≥3 +0.003. Sensitivity ≥3 at specificity 0.95: 0.714 → 0.727.
   - **Verdict:** measurable but far below the ±0.03 noise rule. TTA costs 4× inference time and an ensemble 5×, and it complicates Grad-CAM. Not adopted as a required part of the model; the 5-fold ensemble is still scored once on test as a secondary row.
+- **2026-11-22 · Note on the float32-loader incident (2026-11-20).** The decision (load models as saved; compare any loader change with stored predictions on real images) is unchanged. But the recorded cause (swapped batch-norm weights) was never proven: on 2026-11-22 we saw Kaggle keep serving the previous code version for several minutes after an upload, so the failed re-test may have run the old loader. `kaggle/wait_code.py` now checks the served version before every job.
+- **2026-11-22 · Phase 4, steps 1–5 (see `docs/PROGRESS.md`).** Inference on v2 (`rg-infer-check`: 120/120 images bit-exact, 299/300 grades and all flags equal to the stored predictions, 164–214 ms per image on CPU); Grad-CAM on the real model with a randomisation sanity check and IDRiD lesion validation (`rg-gradcam`, 81 images); image-quality gate (`rg-quality-train`, 3 seeds, ~0.5 GPU-h; `rg-quality-check`); calibration and review rule (`src/evaluation/calibration.py`); Streamlit demo app. GPU total so far about 18 h of 25.
+- **2026-11-22 · Corrections to earlier notes (no metric changes).**
+  - **Seeds:** A (cascade) was trained with 1 seed, so "A vs B" is a single-seed comparison. Mixed vs APTOS-only used 3 seeds on folds 0–1 only. The learning curve is 1 seed on 2 folds.
+  - **Test independence:** the 733 APTOS images were v1's validation set and v2 started from some v1 settings, so the APTOS test score may be slightly optimistic. Added to the limitations in `v2_model_report.md`.
+  - **Counts:** 11 Kaggle job scripts (not 15); 26 image outputs in the team notebooks (not 17).
 
 ## Results
 
