@@ -141,7 +141,9 @@ with st.spinner("Computing the heatmap..."):
 h1, h2 = st.columns(2)
 h1.image(np.clip(x, 0, 255).astype(np.uint8), caption="Prepared image the model sees", use_container_width=True)
 h2.image(G.overlay(x, h), caption=f"Heatmap: {choice.lower()}", use_container_width=True)
-st.caption("The heatmap shows regions that increased the score. It is coarse (12x12 cells) and does not outline lesions.")
+st.caption("The heatmap shows regions that increased the chosen score. Colours are scaled separately for each map: red is the "
+           "strongest region of this map, not how serious it is, so red appears even when the answer is \"no\". "
+           "It is coarse (12x12 cells) and does not outline lesions.")
 
 with st.expander("All output values"):
     st.json({k: v for k, v in result.items()})

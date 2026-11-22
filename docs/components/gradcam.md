@@ -58,6 +58,7 @@ With a 16-pixel tolerance (one Grad-CAM cell is 32 px; lesions then cover 45% of
 - It is **not a precise detector.** Two images in three still have their hottest pixel off every marked lesion (strict). Microaneurysms are mostly missed: they are 1–3 pixels at this resolution and the heatmap grid is 12×12.
 - The map for the **predicted grade is weaker and noisier** (hottest pixel on a lesion in 26%). In the EyePACS dev gallery some predicted-grade maps light up the image border or the optic disc, so **part of the attention is not on lesions**. This is the main risk to state.
 - IDRiD is one dataset, all images contain lesions, and the number of images is small.
+- **The retina mask used in the metrics is slightly too large** (found 2026-11-22): in some images CLAHE noise makes it spill into the black corners. From the stored sizes, it covers on average 75.8% of the square, against about 73% for a clean mask (roughly +4%; at most +14%). The chance level and the enrichment are therefore off by about that much (for example 4.1× could be nearer 3.9×); the order of the rows does not change. The numbers were not recomputed.
 
 ## Failure analysis
 Looked at the 81 images and at the numbers (`src/evaluation/gradcam_idrid.py`, plus the private galleries).

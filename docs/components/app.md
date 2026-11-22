@@ -28,7 +28,7 @@ The server listens on **localhost only** (`.streamlit/config.toml`), so other de
 ## Evidence
 - Headless tests of the page with the real models, `tests/test_app.py` (7 tests, TensorFlow environment): waiting message, a photo produces grade/flags/confidence/disclaimer, the heatmap toggle, bad/tiny/oversized files explained, and a photo rejected by the real gate shows no grade.
 - A server start check: the health endpoint answers 200.
-- Not yet tested: a human using it in a browser, and real patient photos (no photo of a patient is in the repository). *Built and tested headlessly; not user-tested.*
+- First use by a person in a browser (2026-11-22, one real photo without a known grade): quality message, grade, flags and both heatmaps worked. It showed one display bug, now fixed: heat was painted as speckles on the black background (`display_mask` in `src/explain/gradcam.py`). Reject, warning and wrong-file paths have only been tried by the automatic tests. No photo of a patient is in the repository.
 
 ## Why this design
 - **Streamlit** is the simplest tool the team can read and present, and it runs on a laptop CPU.
