@@ -20,8 +20,11 @@ from quality import quality as Q
 
 
 class RetinoPipeline:
-    def __init__(self, model_path=None, quality_model_path=None, require_quality: bool = False):
+    def __init__(self, model_path=None, quality_model_path=None, require_quality: bool = False, use_gate: bool = True):
         self.grader = RetinoGrade(model_path)
+        if not use_gate:                                # only for tests
+            self.gate = None
+            return
         try:
             self.gate = Q.QualityGate(quality_model_path)
         except FileNotFoundError:

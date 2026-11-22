@@ -81,6 +81,9 @@ SPECS = {
                             kernels=[f"{USER}/rg-recon"]),
     "rg-quality-train": dict(script="rg_quality_train.py", gpu=True, internet=True, datasets=[CODE_DS],
                              kernels=[f"{USER}/rg-quality-data"]),
+    # end-to-end check of the deployed quality gate on raw photos (CPU; dev patients only)
+    "rg-quality-check": dict(script="rg_quality_check.py", gpu=False, internet=False,
+                             datasets=[CODE_DS, EYEPACS_HIRES, FINAL_MODEL], kernels=[f"{USER}/rg-quality-train"]),
     # Grad-CAM on the real v2 model (EyePACS dev gallery, sanity checks) + IDRiD lesion validation (CPU)
     "rg-gradcam": dict(script="rg_gradcam.py", gpu=False, internet=False,
                        datasets=[CODE_DS, EYEPACS_HIRES, IDRID, FINAL_MODEL]),
