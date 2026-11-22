@@ -23,11 +23,11 @@ pytestmark = pytest.mark.skipif(not os.path.isfile(MODEL), reason="real v2 model
 APP = os.path.join(ROOT, "app", "streamlit_app.py")
 
 
-def run(data=None, **env):
+def run(data=None, gate=False):
+    """gate=False switches the quality gate off, so the tests do not depend on the gate's opinion of a drawing."""
     os.environ["RG_APP_TEST"] = "1"
     os.environ[R.MODEL_ENV] = MODEL
-    for k, v in env.items():
-        os.environ[k] = v
+    os.environ["RG_APP_TEST_NO_GATE"] = "" if gate else "1"
     at = AppTest.from_file(APP, default_timeout=300)
     if data is not None:
         at.session_state["test_bytes"] = data
@@ -79,3 +79,20 @@ def test_bad_files_are_explained_not_crashed(data, expected):
 def test_huge_file_is_refused(monkeypatch):
     at = run(b"\0" * (26 * 1024 * 1024))
     assert not at.exception and any("larger than" in e.value for e in at.error)
+
+
+def test_rejected_photo_shows_no_grade():
+    """With the real quality gate on, a drawing that the gate rejects must give the retake message and NO grade."""
+    from quality import quality as Q
+    gate_path = os.environ.get(Q.MODEL_ENV) or os.path.join(ROOT, Q.DEFAULT_MODEL_PATH)
+    if not os.path.isfile(gate_path):
+        pytest.skip("quality model not available")
+    import streamlit as st
+    st.cache_resource.clear()
+    st.cache_data.clear()
+    os.environ[Q.MODEL_ENV] = gate_path
+    at = run(png(fundus(h=1200, w=1600)), gate=True)
+    assert not at.exception
+    assert any("too low to grade" in e.value for e in at.error)
+    import re
+    assert not at.metric and re.search(r"Grade d -", text(at)) is None    # the sidebar only lists the grade names

@@ -31,7 +31,8 @@ GRADE_COLORS = ["#2e7d32", "#9e9d24", "#ef6c00", "#d84315", "#b71c1c"]
 @st.cache_resource(show_spinner="Loading the models (a few seconds, once)...")
 def load_pipeline():
     from pipeline import RetinoPipeline
-    return RetinoPipeline(model_path=None, quality_model_path=None)
+    # RG_APP_TEST_NO_GATE is only for the headless tests: it switches the quality gate off
+    return RetinoPipeline(model_path=None, quality_model_path=None, use_gate=not os.environ.get("RG_APP_TEST_NO_GATE"))
 
 
 @st.cache_data(show_spinner=False, max_entries=32)
