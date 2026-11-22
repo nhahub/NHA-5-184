@@ -19,15 +19,16 @@ Step 3–4 are done (model v2 below). Steps 1–2 (quality gate on EyeQ) and 5 (
 
 ## Current model (v2, frozen 2026-11-21)
 
-One **EfficientNetB0** with a 5-class softmax, **384×384** input, trained on **APTOS 2019 + 8,000 EyePACS** images. Each test set below was scored **once**, after the settings were frozen:
+One **EfficientNetB0** with a 5-class softmax, **384×384** input, trained on **APTOS 2019 + 8,000 EyePACS** images. v2 was scored **once** on each test set below, after its settings were frozen:
 
-| Test set (never used for training or tuning) | QWK | Accuracy | Referable AUC | Sight-threatening AUC |
+| Test set (no v2 model trained on it or was tuned on it) | QWK | Accuracy | Referable AUC | Sight-threatening AUC |
 |---|---|---|---|---|
 | **APTOS 2019 held-out, 733 images** | **0.898** | **83.8%** | 0.985 | 0.945 |
 | EyePACS test patients, 3,428 images | 0.669 | 73.8% | 0.907 | 0.970 |
 | IDRiD (India), 516 images | 0.714 | 51.2% | 0.946 | 0.916 |
 
 The previous version (v1, a two-model cascade at 224px, now in [`archive/v1/`](archive/v1)) scored QWK 0.840 / 78.3% on the same 733 APTOS images. The improvement is **+0.058 QWK** [95% CI +0.034, +0.093].
+Caveat: the 733 APTOS images were v1's validation set, and v2 started from some v1 settings, so the APTOS score may be slightly optimistic. EyePACS test patients and IDRiD have no such link.
 Full report: [`docs/v2_model_report.md`](docs/v2_model_report.md) · all experiments: [`docs/experiments.md`](docs/experiments.md) · test tables: [`docs/test_results.md`](docs/test_results.md).
 
 ## Repository layout

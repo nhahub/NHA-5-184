@@ -1,6 +1,6 @@
 # One-shot test results (Phase 3)
 
-**In short:** the frozen model `B384-mix-v2` was scored **once** on three test sets it had never seen: APTOS 2019 held-out (733), IDRiD grading (516) and EyePACS test patients (3,428 images, 1,714 patients). Settings and thresholds were fixed in `docs/frozen_config.json` (commit 86f7381) **before** this run; nothing below was tuned on these images.
+**In short:** the frozen model `B384-mix-v2` was scored **once** on three test sets that no v2 model trained on or was tuned on (the 733 APTOS images were v1's validation set; see the limitations in `v2_model_report.md`): APTOS 2019 held-out (733), IDRiD grading (516) and EyePACS test patients (3,428 images, 1,714 patients). Settings and thresholds were fixed in `docs/frozen_config.json` (commit 86f7381) **before** this run; nothing below was tuned on these images.
 
 Kernel `rg-final-test-cpu` (Kaggle CPU, code 7d93e26, 94 min). Scoring: `python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_test_preds.npz`. 95% CIs from 2,000 bootstrap resamples (EyePACS: by patient). The v1 row uses v1's stored predictions on the same 733 APTOS images (its QWK/accuracy use v1's own rule; sensitivity/specificity use the frozen v2 thresholds on v1's probabilities).
 
