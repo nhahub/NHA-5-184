@@ -132,7 +132,7 @@ def arrays():
 
 # ----------------------------------------------------------------------------- 3. APTOS raw -> preprocess all
 def _prep(path):
-    img = preprocess_rgb(load_rgb(path))
+    img = preprocess_rgb(load_rgb(path), 224)   # v1 arrays are 224px; the inference default is now 384
     return np.round(img * 255).astype(np.uint8)
 
 

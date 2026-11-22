@@ -34,6 +34,7 @@ APTOS_PRE = f"{USER}/aptos2019-preprocessed-dataset"
 V1_MODELS = f"{USER}/aptos-stage1-models"          # best_binary_dr_model.keras (=stage1_v1) + best_severity_model.keras
 EYEPACS = "sovitrath/diabetic-retinopathy-2015-data-colored-resized"   # pre-squeezed to 224x224
 EYEPACS_HIRES = "tanlikesmath/diabetic-retinopathy-resized"           # ~1024px, aspect ratio kept
+FINAL_MODEL = f"{USER}/rg-final-model"                                # frozen v2 model + its EyePACS dev predictions
 IDRID = "aaryapatel98/indian-diabetic-retinopathy-image-dataset"   # official layout incl. lesion masks
 
 # Only these (small) files are ever downloaded from kernel outputs.
@@ -72,6 +73,9 @@ SPECS = {
     # same one-shot test on CPU (used when the GPU queue is stuck; ~1.5 h)
     "rg-final-test-cpu": dict(script="rg_final_test.py", gpu=False, internet=False, datasets=[CODE_DS, EYEPACS_HIRES],
                               kernels=[f"{USER}/rg-data-v2-384", f"{USER}/rg-eyepacs-dev", f"{USER}/rg-recon"]),
+    # end-to-end check of the v2 inference code with the real model (CPU; train pool + EyePACS dev only)
+    "rg-infer-check": dict(script="rg_infer_check.py", gpu=False, internet=False, competitions=[APTOS],
+                           datasets=[CODE_DS, EYEPACS_HIRES, FINAL_MODEL], kernels=[f"{USER}/rg-data-v2-384"]),
     # CPU latency of the deployed path at 224 vs 384 (no GPU, no internet)
     "rg-latency": dict(script="rg_latency.py", gpu=False, internet=False, competitions=[APTOS], datasets=[CODE_DS],
                        kernels=[f"{USER}/rg-data-v2", f"{USER}/rg-train-b-s42", f"{USER}/rg-train-384-b-pilot"]),

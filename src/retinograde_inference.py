@@ -1,19 +1,33 @@
 """
-RetinoGrade AI - Inference Module (النسخة v1)
-==============================================
-المصدر الوحيد للحقيقة: كل الفريق (Streamlit / Azure / Grad-CAM / الاختبارات) بيستخدم الملف ده.
-متعدّلوش في المعالجة (preprocess_rgb) لأنها لازم تفضل مطابقة 100% للي اتدرّبت بيه الموديلات.
+RetinoGrade AI - inference module (model v2)
+============================================
+Single source of truth for the app, Grad-CAM and the tests. Do not change preprocess_rgb: the models
+were trained on exactly its output.
 
-الاستخدام:
     from retinograde_inference import RetinoGrade
-    model = RetinoGrade("models/stage1_v1.keras", "models/best_severity_model.keras")
-    result = model.predict("eye.png")            # مسار | bytes (رفع Streamlit) | numpy RGB uint8
-    print(result["grade_name"], result["confidence"])
+    model = RetinoGrade()                        # weights: argument, else $RG_MODEL, else DEFAULT_MODEL_PATH
+    r = model.predict("eye.png")                 # path | bytes | uploaded file | numpy RGB uint8
+    print(r["grade_name"], r["confidence"], r["referable"])
 
-من الـ Terminal:
-    python retinograde_inference.py eye1.png eye2.png --stage1 models/stage1_v1.keras --stage2 models/best_severity_model.keras
+    python src/retinograde_inference.py eye1.png eye2.png [--model path.keras]
 
-لما يطلع Stage 2 أحسن (v2): غيّروا مسار الملف بس، شكل الـ output ثابت.
+Model v2 = one EfficientNetB0 with a 5-class softmax at 384x384 (docs/frozen_config.json).
+Every output key of v1 is kept. v2 has no Stage 1 / Stage 2, so the legacy keys are derived:
+    stage1_dr_probability       = 1 - P(grade 0)
+    stage2_grade_probabilities  = P(grade k | grade >= 1) = P(k) / (1 - P(0)),  k = 1..4
+    confidence                  = P(predicted grade), the top-class probability
+    threshold                   = threshold on P(grade >= 2) behind "referable"
+                                  (v1 had no such threshold; there this key was the Stage 1 cut-off 0.3)
+Keys added by v2: probabilities, p_referable, p_sight_threatening, thresholds, model_name.
+
+Decision rules (frozen before the one-shot test):
+    grade             = argmax of the 5 probabilities
+    referable         = P(grade >= 2) >= REFERABLE_THRESHOLD
+    sight_threatening = P(grade >= 3) >= SIGHT_THREATENING_THRESHOLD
+The two flags use their own thresholds, so a flag can be on although the predicted grade is lower.
+
+v1 (the old cascade at 224px) stays loadable for comparison only:
+    RetinoGrade(version="v1", stage1_path=..., stage2_path=...)
 """
 import os
 import json
@@ -21,11 +35,20 @@ import argparse
 import numpy as np
 import cv2
 
-MODEL_VERSION = "v1"
-IMG_SIZE = 224
-DEFAULT_THRESHOLD = 0.3          # threshold بتاع Stage 1 (اتختار من جدول Cell 8)
+# --- configuration (one place) ---
+IMG_SIZE = 384                                   # the ONLY image-size setting of v2
+MODEL_VERSION = "v2"
+MODEL_NAME = "B384-mix-v2"
+DEFAULT_MODEL_PATH = "models/B_full_s42_384_mix_model.keras"
+MODEL_ENV = "RG_MODEL"                           # environment variable with the weights path
+REFERABLE_THRESHOLD = 0.3269                     # = docs/frozen_config.json (a test checks it)
+SIGHT_THREATENING_THRESHOLD = 0.0277             # = docs/frozen_config.json
 CLASS_NAMES = ["No DR", "Mild", "Moderate", "Severe", "Proliferative DR"]
 DISCLAIMER = "Decision-support tool for initial screening only; it does not replace diagnosis by an ophthalmologist."
+
+# --- v1 (comparison only) ---
+V1_IMG_SIZE = 224
+V1_THRESHOLD = 0.3          # threshold بتاع Stage 1 (اتختار من جدول Cell 8)
 
 
 # ----------------------------------------------------------------------
@@ -55,7 +78,7 @@ def load_rgb(source):
 # المعالجة النهائية (نفس اللي اتدرّبت بيه الموديلات)
 # ----------------------------------------------------------------------
 def preprocess_rgb(img, target_size=IMG_SIZE, return_geometry=False):
-    """img: numpy RGB uint8 -> float32 (224,224,3) بين 0 و1.
+    """img: numpy RGB uint8 -> float32 (target_size,target_size,3) بين 0 و1.
     return_geometry=True بيرجّع كمان معلومات الـ Crop والـ Padding (محتاجينها لتحويل masks بتاعة IDRiD)."""
     geom = {"orig_shape": tuple(img.shape[:2]), "crop1": None, "crop2": None, "pad": (0, 0, 0, 0)}
 
@@ -108,7 +131,7 @@ def preprocess_rgb(img, target_size=IMG_SIZE, return_geometry=False):
 
 
 def preprocess_image(source, target_size=IMG_SIZE):
-    """اختصار: مسار/bytes/numpy -> float32 (224,224,3) بين 0 و1"""
+    """اختصار: مسار/bytes/numpy -> float32 (target_size,target_size,3) بين 0 و1"""
     return preprocess_rgb(load_rgb(source), target_size)
 
 
@@ -132,45 +155,120 @@ def transform_mask(mask, geom, target_size=IMG_SIZE):
 
 
 # ----------------------------------------------------------------------
-# الـ Cascade: Stage 1 (في اعتلال؟) ثم Stage 2 (الدرجة 1-4)
+# Model input and decisions
 # ----------------------------------------------------------------------
+def to_model_input(img01):
+    """preprocess_rgb output (float 0..1) -> exactly the array the model was trained on (0..255, whole numbers).
+    Training stored round(img * 255) as uint8; rounding here makes inference bit-exact with it."""
+    return np.round(np.asarray(img01) * 255.0).astype(np.float32)
+
+
+def v2_result(probs5):
+    """5 class probabilities -> output dictionary (pure function, no TensorFlow)."""
+    p = np.asarray(probs5, dtype=np.float64)
+    if p.shape != (5,):
+        raise ValueError(f"Expected 5 class probabilities, got shape {p.shape}")
+    grade = int(np.argmax(p))
+    p_dr = float(p[1:].sum())
+    cond = p[1:] / p_dr if p_dr > 0 else np.zeros(4)      # P(k | DR); all 0 if the model gives DR no mass at all
+    p_ref, p_st = float(p[2:].sum()), float(p[3:].sum())
+    return {
+        "model_version": MODEL_VERSION,
+        "grade": grade,
+        "grade_name": CLASS_NAMES[grade],
+        "stage1_dr_probability": float(1.0 - p[0]),
+        "stage2_grade_probabilities": {CLASS_NAMES[i + 1]: float(cond[i]) for i in range(4)},
+        "confidence": float(p[grade]),
+        "referable": bool(p_ref >= REFERABLE_THRESHOLD),
+        "sight_threatening": bool(p_st >= SIGHT_THREATENING_THRESHOLD),
+        "threshold": REFERABLE_THRESHOLD,
+        "disclaimer": DISCLAIMER,
+        # added by v2
+        "model_name": MODEL_NAME,
+        "probabilities": {CLASS_NAMES[i]: float(p[i]) for i in range(5)},
+        "p_referable": p_ref,
+        "p_sight_threatening": p_st,
+        "thresholds": {"referable": REFERABLE_THRESHOLD, "sight_threatening": SIGHT_THREATENING_THRESHOLD},
+    }
+
+
+def v1_result(p1, p2, threshold=V1_THRESHOLD):
+    """v1 cascade decision (kept for comparison only)."""
+    has_dr = p1 >= threshold
+    grade = int(np.argmax(p2)) + 1 if has_dr else 0
+    # confidence: لو في اعتلال = احتمال الدرجة دي من Stage 2 (مشروط بوجود اعتلال) | لو سليم = 1 - p1
+    confidence = float(p2[grade - 1]) if has_dr else float(1.0 - p1)
+    return {
+        "model_version": "v1",
+        "grade": grade,
+        "grade_name": CLASS_NAMES[grade],
+        "stage1_dr_probability": float(p1),
+        "stage2_grade_probabilities": {CLASS_NAMES[i + 1]: float(p2[i]) for i in range(4)},
+        "confidence": confidence,
+        "referable": grade >= 2,               # Moderate أو أعلى
+        "sight_threatening": grade >= 3,       # Severe أو أعلى
+        "threshold": float(threshold),
+        "disclaimer": DISCLAIMER,
+    }
+
+
+def resolve_model_path(model_path=None):
+    """Explicit argument > environment variable RG_MODEL > DEFAULT_MODEL_PATH."""
+    path = str(model_path or os.environ.get(MODEL_ENV) or DEFAULT_MODEL_PATH)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Model file not found: {path}. Pass model_path or set {MODEL_ENV} (see models/README.md).")
+    return path
+
+
 class RetinoGrade:
-    def __init__(self, stage1_path, stage2_path, threshold=DEFAULT_THRESHOLD):
-        import tensorflow as tf                        # import هنا عشان باقي الملف يشتغل من غير TensorFlow
-        self.stage1 = tf.keras.models.load_model(stage1_path)
-        self.stage2 = tf.keras.models.load_model(stage2_path)
-        self.threshold = float(threshold)
+    """Load once, then predict() / predict_batch(). TensorFlow is imported only here."""
 
-    @staticmethod
-    def _to_batch(sources):
-        imgs = np.stack([preprocess_image(s) for s in sources])
-        return imgs * 255.0            # الموديلات متدرّبة على 0-255 (EfficientNet بيعمل normalization جواه)
+    def __init__(self, model_path=None, *, version="v2", stage1_path=None, stage2_path=None, threshold=V1_THRESHOLD):
+        from model_io import load_model
+        self.version = version
+        if version == "v2":
+            if stage1_path or stage2_path:
+                raise ValueError("stage1_path/stage2_path are v1 options: pass version='v1' to load the old cascade")
+            import tensorflow as tf
+            self.img_size = IMG_SIZE
+            self.model_path = resolve_model_path(model_path)
+            self.model = load_model(self.model_path)
+            size, n_out = int(self.model.input_shape[1]), int(self.model.output_shape[-1])
+            if (size, n_out) != (IMG_SIZE, 5):
+                raise ValueError(f"{self.model_path} expects {size}px and has {n_out} outputs; v2 needs {IMG_SIZE}px and 5")
+            # one compiled graph: same numbers as calling the model, much less Python overhead per image
+            self._forward = tf.function(lambda x: self.model(x, training=False),
+                                        input_signature=[tf.TensorSpec([None, IMG_SIZE, IMG_SIZE, 3], tf.float32)])
+        elif version == "v1":
+            if not (stage1_path and stage2_path):
+                raise ValueError("version='v1' needs stage1_path and stage2_path")
+            self.img_size = V1_IMG_SIZE
+            self.stage1, self.stage2 = load_model(stage1_path), load_model(stage2_path)
+            self.threshold = float(threshold)
+        else:
+            raise ValueError(f"Unknown version {version!r} (use 'v2' or 'v1')")
 
-    def _decide(self, p1, p2):
-        has_dr = p1 >= self.threshold
-        grade = int(np.argmax(p2)) + 1 if has_dr else 0
-        # confidence: لو في اعتلال = احتمال الدرجة دي من Stage 2 (مشروط بوجود اعتلال) | لو سليم = 1 - p1
-        confidence = float(p2[grade - 1]) if has_dr else float(1.0 - p1)
-        return {
-            "model_version": MODEL_VERSION,
-            "grade": grade,
-            "grade_name": CLASS_NAMES[grade],
-            "stage1_dr_probability": float(p1),
-            "stage2_grade_probabilities": {CLASS_NAMES[i + 1]: float(p2[i]) for i in range(4)},
-            "confidence": confidence,
-            "referable": grade >= 2,               # Moderate أو أعلى
-            "sight_threatening": grade >= 3,       # Severe أو أعلى
-            "threshold": self.threshold,
-            "disclaimer": DISCLAIMER,
-        }
+    def prepare(self, source):
+        """Image source -> (S, S, 3) float32 array in 0..255, exactly what the model sees."""
+        img = preprocess_rgb(load_rgb(source), self.img_size)
+        return to_model_input(img) if self.version == "v2" else img * 255.0
+
+    def probabilities(self, batch_0_255):
+        """(N, S, S, 3) prepared images -> (N, 5) probabilities (v2 only)."""
+        if self.version != "v2":
+            raise ValueError("probabilities() exists only for v2")
+        return np.asarray(self._forward(np.asarray(batch_0_255, np.float32)), dtype=np.float64)
 
     def predict_batch(self, sources, batch_size=16):
         results = []
         for i in range(0, len(sources), batch_size):
-            x = self._to_batch(sources[i:i + batch_size])
-            p1 = self.stage1.predict(x, verbose=0).ravel()
-            p2 = self.stage2.predict(x, verbose=0)
-            results.extend(self._decide(float(a), b) for a, b in zip(p1, p2))
+            x = np.stack([self.prepare(s) for s in sources[i:i + batch_size]])
+            if self.version == "v2":
+                results.extend(v2_result(p) for p in self.probabilities(x))
+            else:
+                p1 = np.asarray(self.stage1(x, training=False)).ravel()
+                p2 = np.asarray(self.stage2(x, training=False))
+                results.extend(v1_result(float(a), b, self.threshold) for a, b in zip(p1, p2))
         return results
 
     def predict(self, source):
@@ -180,12 +278,16 @@ class RetinoGrade:
 def main():
     ap = argparse.ArgumentParser(description="RetinoGrade AI - diabetic retinopathy grading from fundus images")
     ap.add_argument("images", nargs="+", help="Image file paths")
-    ap.add_argument("--stage1", default=os.environ.get("RG_STAGE1", "models/stage1_v1.keras"))
-    ap.add_argument("--stage2", default=os.environ.get("RG_STAGE2", "models/best_severity_model.keras"))
-    ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    ap.add_argument("--model", help=f"v2 weights (default: ${MODEL_ENV} or {DEFAULT_MODEL_PATH})")
+    ap.add_argument("--version", choices=["v2", "v1"], default="v2", help="v1 = old cascade, comparison only")
+    ap.add_argument("--stage1", default=os.environ.get("RG_STAGE1"), help="v1 only")
+    ap.add_argument("--stage2", default=os.environ.get("RG_STAGE2"), help="v1 only")
     args = ap.parse_args()
 
-    model = RetinoGrade(args.stage1, args.stage2, args.threshold)
+    if args.version == "v2":
+        model = RetinoGrade(args.model)
+    else:
+        model = RetinoGrade(version="v1", stage1_path=args.stage1, stage2_path=args.stage2)
     out = {path: res for path, res in zip(args.images, model.predict_batch(args.images))}
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
