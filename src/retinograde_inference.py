@@ -135,9 +135,11 @@ def preprocess_image(source, target_size=IMG_SIZE):
     return preprocess_rgb(load_rgb(source), target_size)
 
 
-def transform_mask(mask, geom, target_size=IMG_SIZE):
+def transform_mask(mask, geom, target_size=IMG_SIZE, keep_small=False):
     """بيطبّق نفس Crop/Padding/Resize على mask (مثلاً من IDRiD) عشان تنطبق على الصورة المعالجة.
-    mask لازم يبقى بنفس مقاس الصورة الأصلية اللي اتحسبت منها geom."""
+    mask لازم يبقى بنفس مقاس الصورة الأصلية اللي اتحسبت منها geom.
+    keep_small=True: a lesion smaller than one output pixel is kept (a pixel counts if it touches the lesion),
+    instead of vanishing in the nearest-neighbour resize. Returns 0/1 in that case."""
     m = np.asarray(mask)
     if m.dtype == bool:
         m = m.astype(np.uint8)
@@ -151,6 +153,8 @@ def transform_mask(mask, geom, target_size=IMG_SIZE):
         m = m[y2:y2 + h2, x2:x2 + w2]
     t, b, l, r = geom["pad"]
     m = cv2.copyMakeBorder(m, t, b, l, r, cv2.BORDER_CONSTANT, value=0)
+    if keep_small:
+        return (cv2.resize((m > 0).astype(np.float32), (target_size, target_size), interpolation=cv2.INTER_AREA) > 0).astype(np.uint8)
     return cv2.resize(m, (target_size, target_size), interpolation=cv2.INTER_NEAREST)
 
 

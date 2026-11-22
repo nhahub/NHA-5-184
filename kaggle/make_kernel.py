@@ -73,6 +73,9 @@ SPECS = {
     # same one-shot test on CPU (used when the GPU queue is stuck; ~1.5 h)
     "rg-final-test-cpu": dict(script="rg_final_test.py", gpu=False, internet=False, datasets=[CODE_DS, EYEPACS_HIRES],
                               kernels=[f"{USER}/rg-data-v2-384", f"{USER}/rg-eyepacs-dev", f"{USER}/rg-recon"]),
+    # Grad-CAM on the real v2 model (EyePACS dev gallery, sanity checks) + IDRiD lesion validation (CPU)
+    "rg-gradcam": dict(script="rg_gradcam.py", gpu=False, internet=False,
+                       datasets=[CODE_DS, EYEPACS_HIRES, IDRID, FINAL_MODEL]),
     # end-to-end check of the v2 inference code with the real model (CPU; train pool + EyePACS dev only)
     "rg-infer-check": dict(script="rg_infer_check.py", gpu=False, internet=False, competitions=[APTOS],
                            datasets=[CODE_DS, EYEPACS_HIRES, FINAL_MODEL], kernels=[f"{USER}/rg-data-v2-384"]),
