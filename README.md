@@ -40,7 +40,7 @@ src/                         ← model v2 pipeline
   training/train.py          trainer (5-class model, folds, seeds, 384px, APTOS + EyePACS, full-pool final model)
   training/predict.py        re-scoring saved models
   evaluation/                metrics (QWK, sensitivity/specificity, AUC, bootstrap CIs) + one script per experiment
-  explain/gradcam.py         Grad-CAM for the nested EfficientNet
+  explain/gradcam.py         Grad-CAM for the nested EfficientNet, lesion-overlap validation
   model_io.py                how to load trained models safely
 tests/                       local tests (no TensorFlow needed)
 kaggle/                      private Kaggle jobs: make_kernel.py + kernels/ (data build, training, scoring, final test)
@@ -70,7 +70,7 @@ cd Diabetic-Retinopathy-Project
 python -m venv .venv
 # Windows: .venv\Scripts\activate      Linux/macOS: source .venv/bin/activate
 pip install -r requirements-local.txt
-python -m pytest              # 30 tests, all synthetic data
+python -m pytest              # 90 tests, all synthetic data (tests that need TensorFlow and a model file are skipped)
 ```
 
 Training and evaluation run on **Kaggle** (private jobs), not on a laptop. See [`kaggle/README.md`](kaggle/README.md). `requirements.txt` pins the Kaggle environment (TensorFlow 2.21.0 / Keras 3.13.2), which the saved models need.
@@ -81,6 +81,16 @@ Re-create the analysis tables from downloaded results (CPU, seconds):
 python src/evaluation/report.py --runs kaggle/runs          # results block in docs/experiments.md
 python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_test_preds.npz
 ```
+
+## Demo app (CPU)
+
+```bash
+pip install -r requirements-app.txt              # TensorFlow 2.21 + Streamlit (Python 3.11-3.13)
+set RG_MODEL=models\B_full_s42_384_mix_model.keras
+set RG_QUALITY_MODEL=models\quality_b0_224.keras
+streamlit run app/streamlit_app.py               # localhost only
+```
+Model files are not in the repository; [`models/README.md`](models/README.md) says where they are. Details: [`docs/components/app.md`](docs/components/app.md). Components: [inference](docs/components/inference.md) · [Grad-CAM](docs/components/gradcam.md) · [quality gate](docs/components/quality_gate.md) · [calibration & review](docs/components/calibration_review.md).
 
 ## Data and rules
 
@@ -93,9 +103,9 @@ python src/evaluation/final_test.py --preds kaggle/runs/rg-final-test-cpu/final_
 | Milestone | Status |
 |---|---|
 | M1 Data collection, preprocessing, EDA | done |
-| M2 DR severity model + evaluation | **done (v2 frozen, tested)** · image-quality model (EyeQ) not built yet |
-| M3 Grad-CAM + IDRiD validation, EyePACS generalization, Azure | Grad-CAM code written, not yet run on v2 · EyePACS done · Azure not started |
-| M4 MLflow, Streamlit, monitoring | not started |
+| M2 DR severity model + evaluation | **done (v2 frozen, tested)** · image-quality gate (EyeQ) done ([component](docs/components/quality_gate.md)) |
+| M3 Grad-CAM + IDRiD validation, EyePACS generalization, Azure | **done** (Grad-CAM + IDRiD on v2, [component](docs/components/gradcam.md)); EyePACS done · Azure not started |
+| M4 MLflow, Streamlit, monitoring | **Streamlit demo app done** (headless-tested) · MLflow, monitoring not started |
 | M5 Documentation and presentation | in progress |
 
 Note: `src/retinograde_inference.py` runs model **v2** at 384px with the same output keys as v1 ([`docs/components/inference.md`](docs/components/inference.md)). Live status: [`docs/PROGRESS.md`](docs/PROGRESS.md).
