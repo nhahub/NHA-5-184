@@ -60,7 +60,12 @@ With a 16-pixel tolerance (one Grad-CAM cell is 32 px; lesions then cover 45% of
 - IDRiD is one dataset, all images contain lesions, and the number of images is small.
 
 ## Failure analysis
-From `idrid_worst_*.png` (images with the smallest share of heat on lesions): two recurring patterns, (a) the model judges the eye as grade 0 or 1 and the map highlights the disc or a vessel crossing (IDRiD_52, IDRiD_12 in those pages, both P(≥2) ≈ 0.07); (b) faint or very few lesions away from the hottest region. Referable-flagged images do better (0.40 vs 0.10 in images without the flag; the latter, 21 of 81, are mostly eyes the model calls below "refer").
+Looked at the 81 images and at the numbers (`src/evaluation/gradcam_idrid.py`, plus the private galleries).
+
+- **Real misses are rare.** With a 16-pixel tolerance, the hottest pixel of the referral map is away from every marked lesion in **3 of 81** images: IDRiD_24 (P(≥2) = 0.10), IDRiD_26 (grade 3, P(≥2) = 0.997: a genuine miss of the explanation), and IDRiD_29, which the model grades 0 although it has lesions (a *grading* error, so the map explains a healthy call).
+- **A strict hit (0 tolerance) fails mostly for a technical reason:** lesions are a few pixels wide while one Grad-CAM cell is 32 px, so a peak that sits *next to* a lesion counts as a miss. The "worst by energy" pictures include maps that clearly sit on the lesion cluster (IDRiD_12, IDRiD_38, IDRiD_44).
+- **The map for the predicted grade is the weak one:** for images the model grades 0 or 1 (27 of 81) it never lands strictly on a lesion (0%); its hits come from grades 2–4 (36%, 42%, 67%). Several of these maps light up the **optic disc** (IDRiD_52) or the **image border** (IDRiD_41, IDRiD_62). This is the clearest sign that part of what the model uses is not a lesion, and it is the honest limitation to state.
+- **The referral map depends on the decision:** it hits a lesion strictly in 40% of the images flagged referable (60 images), but in only 10% of those not flagged (21 images), where there is little referable signal to explain.
 
 ## License (checked 2026-11-22)
 IDRiD's own IEEE DataPort page, the Zenodo mirror and the Kaggle copy state **CC BY 4.0**: use, sharing and slides are allowed with the citation Porwal et al., *Indian Diabetic Retinopathy Image Dataset (IDRiD)*, IEEE DataPort 2018, doi:10.21227/H25W98. The challenge's Rules page and the MDPI data paper could not be read automatically, so extra conditions there are unconfirmed. Until a person has read <https://idrid.grand-challenge.org/Rules/>, no IDRiD image is used in documents, screenshots or the app.
