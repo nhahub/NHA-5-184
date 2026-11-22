@@ -57,8 +57,8 @@ Review is asked for on 13% of APTOS OOF photos and 26% of the EyePACS dev photos
 
 ## Decisions needed from the team (proposals are only defaults)
 1. **Calibrated confidence in the app:** (a) use T = 1.21 (as the plan asked, fitted on APTOS; it makes EyePACS-like confidence less accurate), (b) show the raw confidence, or (c) choose a temperature after collecting more data from the target population. Recommendation: **(b) or (c)**; the code uses 1.21 as default only so the app follows the plan, and it is one environment variable (`RG_TEMPERATURE`) away from raw.
-2. **Sight-threatening threshold:** keep 0.028 (frozen and tested), or move to 0.10–0.20 (half the false alarms, ~12–24 more missed eyes on dev). Any change must be declared as made after the test.
-3. **Review rule:** accept the proposed rule, or ask for a stricter one (e.g. margin 0.25 → about 82% automatic) or a looser one.
+2. **Sight-threatening threshold:** keep 0.028 (frozen and tested), or move to 0.10–0.20 (about half the false alarms or fewer; 12–24 more missed eyes on dev). Any change must be declared as made after the test.
+3. **Review rule:** accept the proposed rule, or ask for a stricter one (e.g. margin 0.25 → about 85% automatic) or a looser one.
 
 ## Why this design
 - **Simple quantities** (top-class probability, distance to the referral threshold, quality label): a clinician understands them and they need no extra model.
